@@ -5,6 +5,8 @@ import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class CreateSchoolUseCase {
@@ -23,6 +25,7 @@ public class CreateSchoolUseCase {
                 .name(school.getName())
                 .cnpj(school.getCnpj())
                 .subdomain(school.getSubdomain())
+                .externalId(UUID.randomUUID())
                 .active(true)
                 .build();
 
