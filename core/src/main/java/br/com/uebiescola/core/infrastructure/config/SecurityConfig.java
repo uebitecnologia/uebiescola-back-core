@@ -26,10 +26,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
                         // Opção A: Apenas CEO gerencia escolas (Recomendado para o início)
-                        .requestMatchers("/api/v1/schools/**").hasRole("CEO")
+                        //.requestMatchers("/api/v1/schools/**").hasRole("CEO")
 
                         // Opção B: Se quiser que ADMIN também possa (SaaS maduro)
-                        // .requestMatchers("/api/v1/schools/**").hasAnyRole("CEO", "ADMIN")
+                         .requestMatchers("/api/v1/schools/**").hasAnyRole("CEO", "ADMIN")
 
                         .requestMatchers("/api/v1/ceo/**").hasRole("CEO")
                         .anyRequest().authenticated()
