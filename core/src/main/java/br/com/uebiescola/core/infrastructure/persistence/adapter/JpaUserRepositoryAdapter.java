@@ -3,15 +3,17 @@ package br.com.uebiescola.core.infrastructure.persistence.adapter;
 import br.com.uebiescola.core.domain.model.User;
 import br.com.uebiescola.core.domain.repository.UserRepository;
 import br.com.uebiescola.core.infrastructure.persistence.entity.UserEntity;
+import br.com.uebiescola.core.infrastructure.persistence.mapper.UserPersistenceMapper;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
-public class UserRepositoryAdapter implements UserRepository {
+public class JpaUserRepositoryAdapter implements UserRepository {
 
     private final JpaUserRepository jpaUserRepository;
 
@@ -38,6 +40,15 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public Optional<User> findById(Long id) {
         return jpaUserRepository.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public List<User> findAll() {
+        List<UserEntity> entities = jpaUserRepository.findAll();
+
+        return entities.stream()
+                .map(UserPersistenceMapper::toDomain)
+                .toList();
     }
 
     private User toDomain(UserEntity entity) {

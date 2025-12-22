@@ -2,8 +2,10 @@ package br.com.uebiescola.core.infrastructure.persistence.adapter;
 
 import br.com.uebiescola.core.domain.model.School;
 import br.com.uebiescola.core.domain.repository.SchoolRepository;
+import br.com.uebiescola.core.infrastructure.persistence.mapper.SchoolPersistenceMapper;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository;
 import br.com.uebiescola.core.infrastructure.persistence.entity.SchoolEntity;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,21 +20,16 @@ public class JpaSchoolRepositoryAdapter implements SchoolRepository {
     private final JpaSchoolRepository jpaRepository;
 
     @Override
+    @Transactional
     public School save(School school) {
-        // Converte Domain -> Entity
-        SchoolEntity entity = SchoolEntity.builder()
-                .id(school.getId())
-                .externalId(school.getExternalId())
-                .name(school.getName())
-                .cnpj(school.getCnpj())
-                .subdomain(school.getSubdomain())
-                .active(school.getActive())
-                .build();
+        // 1. Transforma o domínio em entidade JPA
+        SchoolEntity entity = SchoolPersistenceMapper.toEntity(school);
 
+        // 2. Salva no banco (O CascadeType.ALL nas entities cuidará do resto)
         SchoolEntity saved = jpaRepository.save(entity);
 
-        // Retorna Entity -> Domain
-        return mapToDomain(saved);
+        // 3. Devolve como Domínio para o Use Case
+        return SchoolPersistenceMapper.toDomain(saved);
     }
 
     @Override
@@ -42,7 +39,11 @@ public class JpaSchoolRepositoryAdapter implements SchoolRepository {
 
     @Override
     public List<School> findAll() {
-        return List.of();
+        List<SchoolEntity> entities = jpaRepository.findAll();
+
+        return entities.stream()
+                .map(SchoolPersistenceMapper::toDomain)
+                .toList();
     }
 
     @Override

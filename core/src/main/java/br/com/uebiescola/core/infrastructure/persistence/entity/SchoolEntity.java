@@ -17,7 +17,8 @@ import java.util.UUID;
 @NoArgsConstructor    // Obrigatório para o JPA
 @AllArgsConstructor   // Obrigatório para o Builder funcionar
 @Builder
-@Filter(name = "tenantFilter", condition = "id = :tenantId") // Para a tabela Schools, filtramos pelo próprio ID
+@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = Long.class))
+//@Filter(name = "tenantFilter", condition = "id = :tenantId")
 public class SchoolEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,14 +30,25 @@ public class SchoolEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String legalName;
+
     @Column(unique = true, nullable = false)
     private String cnpj;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = true)
+    private String stateRegistration;
+
     private String subdomain;
 
     private Boolean active;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @OneToOne(mappedBy = "school", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private SchoolAddressEntity address;
+
+    @OneToOne(mappedBy = "school", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private SchoolContractEntity contract;
 }
