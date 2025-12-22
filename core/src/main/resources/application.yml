@@ -1,0 +1,21 @@
+server:
+  port: 8081
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/uebiescola_db
+    username: uebi
+    password: uebiadmin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+uebi:
+  jwt:
+    secret: mMEyIgy1ucHbW3LmgrWBWypFcz5pEFGGSMIUlrTTeiri3oUSaUbpa2uOW27r1aSE
+    expiration: 86400000
