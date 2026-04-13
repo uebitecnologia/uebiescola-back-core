@@ -72,13 +72,20 @@ jobs:
             # Restart apenas este container
             docker compose -f docker-compose.prod.yml up -d --no-deps core
 
-            # Health check
+            # Health check (aguarda container ficar healthy via Docker)
             echo "Aguardando serviço ficar healthy..."
-            sleep 30
-            if curl -sf --max-time 10 http://localhost:8081/actuator/health > /dev/null 2>&1; then
-              echo "✅ Core Service deployed successfully!"
-            else
-              echo "❌ Core Service health check failed!"
+            for i in $(seq 1 30); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' uebi-core 2>/dev/null || echo "unknown")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "✅ Core Service deployed successfully!"
+                break
+              fi
+              echo "  Attempt $i/30 - Status: $STATUS"
+              sleep 10
+            done
+            if [ "$STATUS" != "healthy" ]; then
+              echo "❌ Core Service health check failed! Status: $STATUS"
+              docker logs uebi-core 2>&1 | tail -20
               exit 1
             fi
 
