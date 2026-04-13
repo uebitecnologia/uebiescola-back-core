@@ -89,4 +89,4 @@ jobs:
               docker logs uebi-core 2>&1 | tail -10
             fi
 
-            docker image prune -f
+            docker image prune -f || true
