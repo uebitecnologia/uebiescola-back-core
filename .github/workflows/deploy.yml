@@ -74,13 +74,13 @@ jobs:
 
             # Health check (aguarda container ficar healthy via Docker)
             echo "Aguardando serviço ficar healthy..."
-            for i in $(seq 1 30); do
+            for i in $(seq 1 60); do
               STATUS=$(docker inspect --format='{{.State.Health.Status}}' uebi-core 2>/dev/null || echo "unknown")
               if [ "$STATUS" = "healthy" ]; then
                 echo "✅ Core Service deployed successfully!"
                 break
               fi
-              echo "  Attempt $i/30 - Status: $STATUS"
+              echo "  Attempt $i/60 - Status: $STATUS"
               sleep 10
             done
             if [ "$STATUS" != "healthy" ]; then
