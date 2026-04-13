@@ -38,7 +38,6 @@ public class SchoolEntity {
     @Column(unique = true)
     private String subdomain;
 
-    @Lob
     @Column(name = "logo_bytes")
     private byte[] logoBytes;
 
