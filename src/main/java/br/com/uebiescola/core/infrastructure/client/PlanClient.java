@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.math.BigDecimal;
 import java.util.List;
 
-@FeignClient(name = "plans-service", url = "http://localhost:8082/api/v1/plans/admin")
+@FeignClient(name = "plans-service", url = "${feign.plans-service.url:http://localhost:8082/api/v1}/plans/admin")
 public interface PlanClient {
 
     @GetMapping("/{id}")

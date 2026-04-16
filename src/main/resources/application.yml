@@ -20,8 +20,16 @@ spring:
         format_sql: true
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 5MB
+      max-file-size: 10MB
+      max-request-size: 10MB
+feign:
+  plans-service:
+    url: ${FEIGN_PLANS_SERVICE_URL:http://localhost:8082/api/v1}
+  academic-service:
+    url: ${FEIGN_ACADEMIC_SERVICE_URL:http://localhost:8084/api/v1/academic}
+  finance-service:
+    url: ${FEIGN_FINANCE_SERVICE_URL:http://localhost:8083/api/v1}
+
 uebi:
   jwt:
     secret: ${JWT_SECRET:mMEyIgy1ucHbW3LmgrWBWypFcz5pEFGGSMIUlrTTeiri3oUSaUbpa2uOW27r1aSE}

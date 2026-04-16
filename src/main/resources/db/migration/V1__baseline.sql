@@ -71,9 +71,9 @@ CREATE TABLE IF NOT EXISTS school_contracts (
 );
 
 CREATE TABLE IF NOT EXISTS school_contract_modules (
-    school_contract_entity_id BIGINT NOT NULL,
+    contract_id BIGINT NOT NULL,
     module_name VARCHAR(255),
-    CONSTRAINT fk_contract_modules FOREIGN KEY (school_contract_entity_id) REFERENCES school_contracts(id)
+    CONSTRAINT fk_contract_modules FOREIGN KEY (contract_id) REFERENCES school_contracts(id)
 );
 
 CREATE TABLE IF NOT EXISTS access_levels (
@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS access_levels (
 
 CREATE TABLE IF NOT EXISTS global_settings (
     id BIGSERIAL PRIMARY KEY,
-    key VARCHAR(255) NOT NULL UNIQUE,
-    value TEXT,
+    setting_key VARCHAR(255) NOT NULL UNIQUE,
+    setting_value TEXT,
     category VARCHAR(255) NOT NULL,
     updated_at TIMESTAMP
 );
