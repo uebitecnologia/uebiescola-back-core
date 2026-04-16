@@ -8,6 +8,7 @@ import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
 import org.hibernate.validator.constraints.br.CPF;
 import lombok.*;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -50,4 +51,10 @@ public class UserEntity {
 
     @Column(name = "access_level_id")
     private Long accessLevelId;
+
+    @Column(name = "lgpd_consent_at")
+    private LocalDateTime lgpdConsentAt;
+
+    @Column(name = "lgpd_consent_ip", length = 45)
+    private String lgpdConsentIp;
 }
