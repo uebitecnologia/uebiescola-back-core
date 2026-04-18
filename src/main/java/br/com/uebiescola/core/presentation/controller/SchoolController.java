@@ -154,6 +154,24 @@ public class SchoolController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/public/search")
+    public ResponseEntity<List<Map<String, Object>>> searchSchools(
+            @RequestParam(required = false, defaultValue = "") String q) {
+        List<School> allSchools = findSchoolsUseCase.execute();
+        String query = q.toLowerCase().trim();
+        List<Map<String, Object>> result = allSchools.stream()
+                .filter(s -> Boolean.TRUE.equals(s.getActive()))
+                .filter(s -> query.isEmpty()
+                        || (s.getName() != null && s.getName().toLowerCase().contains(query))
+                        || (s.getSubdomain() != null && s.getSubdomain().toLowerCase().contains(query)))
+                .map(s -> Map.<String, Object>of(
+                        "name", s.getName() != null ? s.getName() : "",
+                        "subdomain", s.getSubdomain() != null ? s.getSubdomain() : ""
+                ))
+                .toList();
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/tenant/{subdomain}")
     public ResponseEntity<School> getBySubdomain(@PathVariable String subdomain) {
         return schoolRepository.findBySubdomain(subdomain)

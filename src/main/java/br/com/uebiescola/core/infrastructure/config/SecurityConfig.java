@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/schools/tenant/**").permitAll()
+                        .requestMatchers("/api/v1/schools/public/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error").permitAll()
