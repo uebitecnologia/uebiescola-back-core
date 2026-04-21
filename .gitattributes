@@ -1,2 +1,50 @@
-/mvnw text eol=lf
+# Consistencia de line endings -- elimina warnings "LF will be replaced by CRLF"
+# ao commitar do Windows enquanto o backend/CI roda em Linux.
+
+* text=auto eol=lf
+
+# Shell scripts -- sempre LF (rodam em container Linux)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Batch/PowerShell -- CRLF (rodam em Windows)
+*.bat text eol=crlf
 *.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Codigo
+*.java text eol=lf
+*.kt text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sql text eol=lf
+*.md text eol=lf
+
+# Binarios -- nao tocar em line endings
+*.jar binary
+*.war binary
+*.ear binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
