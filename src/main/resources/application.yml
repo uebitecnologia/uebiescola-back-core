@@ -43,6 +43,9 @@ uebi:
     secret: ${JWT_SECRET:dev-insecure-do-not-use-in-production-set-JWT_SECRET-env-var-0123456789abcdef}
     expiration: 28800000
 
+loki:
+  url: ${LOKI_URL:http://loki:3100}
+
 management:
   endpoints:
     web:
