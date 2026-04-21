@@ -40,7 +40,7 @@ feign:
 
 uebi:
   jwt:
-    secret: ${JWT_SECRET:L0X0H66A+3CMaB5aSCLCOueOaysfO28MLKCXJxBLCN0RyfUTSVflNzGiBzb07LIz}
+    secret: ${JWT_SECRET:dev-insecure-do-not-use-in-production-set-JWT_SECRET-env-var-0123456789abcdef}
     expiration: 28800000
 
 management:
