@@ -22,6 +22,14 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  cache:
+    type: ${SPRING_CACHE_TYPE:simple}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      connect-timeout: 2000ms
 feign:
   plans-service:
     url: ${FEIGN_PLANS_SERVICE_URL:http://localhost:8082/api/v1}
@@ -32,7 +40,7 @@ feign:
 
 uebi:
   jwt:
-    secret: ${JWT_SECRET:mMEyIgy1ucHbW3LmgrWBWypFcz5pEFGGSMIUlrTTeiri3oUSaUbpa2uOW27r1aSE}
+    secret: ${JWT_SECRET:L0X0H66A+3CMaB5aSCLCOueOaysfO28MLKCXJxBLCN0RyfUTSVflNzGiBzb07LIz}
     expiration: 28800000
 
 management:
