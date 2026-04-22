@@ -73,6 +73,9 @@ jobs:
             # Restart apenas este container
             docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate core
 
+            # Restart nginx para re-resolver IP do upstream (evita DNS cache apontando para IP antigo)
+            docker restart uebi-gateway || true
+
             # Health check (informational - não bloqueia o deploy)
             echo "Aguardando serviço ficar healthy..."
             for i in $(seq 1 20); do
