@@ -115,3 +115,29 @@ jobs:
 
             echo "✅ Deploy $SERVICE concluido com sucesso"
             docker image prune -f || true
+
+      - name: Notify admin on deploy failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v4
+        with:
+          server_address: smtp.zoho.com
+          server_port: 587
+          secure: false
+          username: suporte@uebiescola.com.br
+          password: ${{ secrets.ZOHO_SMTP_PASSWORD }}
+          subject: "[UebiEscola CI] Deploy FALHOU — ${{ github.repository }}"
+          to: admin@uebiescola.com.br
+          from: UebiEscola CI <suporte@uebiescola.com.br>
+          body: |
+            O deploy do serviço ${{ github.repository }} falhou.
+            Rollback automático para a imagem :previous foi executado (se aplicável).
+
+            Detalhes:
+            - Commit:   ${{ github.sha }}
+            - Branch:   ${{ github.ref }}
+            - Workflow: ${{ github.workflow }}
+            - Run:      ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - Disparado por: ${{ github.actor }}
+
+            Acesse o link do run acima para ver os logs completos.
+
