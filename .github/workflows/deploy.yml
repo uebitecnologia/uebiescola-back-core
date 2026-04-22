@@ -71,7 +71,7 @@ jobs:
             docker tag ghcr.io/uebitecnologia/uebiescola-back-core:${{ github.sha }} ghcr.io/uebitecnologia/uebiescola-back-core:latest
 
             # Restart apenas este container
-            docker compose -f docker-compose.prod.yml up -d --no-deps core
+            docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate core
 
             # Health check (informational - não bloqueia o deploy)
             echo "Aguardando serviço ficar healthy..."
