@@ -69,18 +69,19 @@ public class LokiLogsController {
         Instant end = Instant.now();
         Instant start = end.minus(Duration.ofMinutes(safeSinceMinutes));
 
-        String url = UriComponentsBuilder.fromUriString(lokiUrl + "/loki/api/v1/query_range")
+        java.net.URI uri = UriComponentsBuilder.fromUriString(lokiUrl + "/loki/api/v1/query_range")
                 .queryParam("query", query)
                 .queryParam("start", toNanos(start))
                 .queryParam("end", toNanos(end))
                 .queryParam("limit", safeLimit)
                 .queryParam("direction", "backward")
-                .build(false)
-                .toUriString();
+                .build()
+                .encode()
+                .toUri();
 
         try {
             @SuppressWarnings("unchecked")
-            Map<String, Object> raw = restTemplate.getForObject(url, Map.class);
+            Map<String, Object> raw = restTemplate.getForObject(uri, Map.class);
             return ResponseEntity.ok(simplify(raw, safeLimit));
         } catch (RestClientException e) {
             log.warn("Loki query falhou: {}", e.getMessage());
@@ -95,10 +96,10 @@ public class LokiLogsController {
     @GetMapping("/services")
     @PreAuthorize("hasRole('CEO')")
     public ResponseEntity<?> listServices() {
-        String url = lokiUrl + "/loki/api/v1/label/service/values";
+        java.net.URI uri = java.net.URI.create(lokiUrl + "/loki/api/v1/label/service/values");
         try {
             @SuppressWarnings("unchecked")
-            Map<String, Object> raw = restTemplate.getForObject(url, Map.class);
+            Map<String, Object> raw = restTemplate.getForObject(uri, Map.class);
             Object data = raw != null ? raw.get("data") : null;
             return ResponseEntity.ok(Map.of("services", data != null ? data : List.of()));
         } catch (RestClientException e) {
