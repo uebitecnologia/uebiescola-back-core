@@ -51,6 +51,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/schools/tenant/**").permitAll()
                         .requestMatchers("/api/v1/schools/public/**").permitAll()
+                        // /api/v1/internal/** e para uso service-to-service dentro da rede Docker.
+                        // Nginx nao expoe /v1/internal/* externamente.
+                        .requestMatchers("/api/v1/internal/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error").permitAll()
