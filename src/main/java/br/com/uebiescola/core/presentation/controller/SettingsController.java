@@ -64,6 +64,33 @@ public class SettingsController {
         if (dto.notifyExamReminder() != null) settings.setNotifyExamReminder(dto.notifyExamReminder());
         if (dto.backupSchedule() != null) settings.setBackupSchedule(dto.backupSchedule());
 
+        // Financeiro
+        if (dto.defaultDueDay() != null) settings.setDefaultDueDay(dto.defaultDueDay());
+        if (dto.defaultPaymentMethod() != null) settings.setDefaultPaymentMethod(dto.defaultPaymentMethod());
+        if (dto.dunningEmailEnabled() != null) settings.setDunningEmailEnabled(dto.dunningEmailEnabled());
+        if (dto.dunningWhatsappEnabled() != null) settings.setDunningWhatsappEnabled(dto.dunningWhatsappEnabled());
+        if (dto.dunningPushEnabled() != null) settings.setDunningPushEnabled(dto.dunningPushEnabled());
+        if (dto.dunningDaysFirst() != null) settings.setDunningDaysFirst(dto.dunningDaysFirst());
+        if (dto.dunningDaysSecond() != null) settings.setDunningDaysSecond(dto.dunningDaysSecond());
+        if (dto.dunningDaysThird() != null) settings.setDunningDaysThird(dto.dunningDaysThird());
+
+        // Pedagogico
+        if (dto.gradeScaleType() != null) settings.setGradeScaleType(dto.gradeScaleType());
+        if (dto.passingGrade() != null) settings.setPassingGrade(dto.passingGrade());
+        if (dto.minimumAttendancePercent() != null) settings.setMinimumAttendancePercent(dto.minimumAttendancePercent());
+        if (dto.assessmentsPerTerm() != null) settings.setAssessmentsPerTerm(dto.assessmentsPerTerm());
+
+        // Calendario
+        if (dto.academicYearStart() != null) settings.setAcademicYearStart(dto.academicYearStart());
+        if (dto.academicYearEnd() != null) settings.setAcademicYearEnd(dto.academicYearEnd());
+        if (dto.minimumSchoolDays() != null) settings.setMinimumSchoolDays(dto.minimumSchoolDays());
+
+        // Portaria
+        if (dto.qrExpirationMinutes() != null) settings.setQrExpirationMinutes(dto.qrExpirationMinutes());
+        if (dto.gateAllowedStartTime() != null) settings.setGateAllowedStartTime(dto.gateAllowedStartTime());
+        if (dto.gateAllowedEndTime() != null) settings.setGateAllowedEndTime(dto.gateAllowedEndTime());
+        if (dto.gateAutoApproval() != null) settings.setGateAutoApproval(dto.gateAutoApproval());
+
         settingsRepository.save(settings);
 
         // Registra no log de auditoria
@@ -154,14 +181,33 @@ public class SettingsController {
         auditLogRepository.save(log);
     }
 
-    private SchoolSettingsDTO toDTO(SchoolSettingsEntity entity) {
+    private SchoolSettingsDTO toDTO(SchoolSettingsEntity e) {
         return new SchoolSettingsDTO(
-                entity.getTwoFactorEnabled(),
-                entity.getNotifyEnrollment(),
-                entity.getNotifyDelinquency(),
-                entity.getNotifyExamReminder(),
-                entity.getBackupSchedule(),
-                entity.getApiKey()
+                e.getTwoFactorEnabled(),
+                e.getNotifyEnrollment(),
+                e.getNotifyDelinquency(),
+                e.getNotifyExamReminder(),
+                e.getBackupSchedule(),
+                e.getApiKey(),
+                e.getDefaultDueDay(),
+                e.getDefaultPaymentMethod(),
+                e.getDunningEmailEnabled(),
+                e.getDunningWhatsappEnabled(),
+                e.getDunningPushEnabled(),
+                e.getDunningDaysFirst(),
+                e.getDunningDaysSecond(),
+                e.getDunningDaysThird(),
+                e.getGradeScaleType(),
+                e.getPassingGrade(),
+                e.getMinimumAttendancePercent(),
+                e.getAssessmentsPerTerm(),
+                e.getAcademicYearStart(),
+                e.getAcademicYearEnd(),
+                e.getMinimumSchoolDays(),
+                e.getQrExpirationMinutes(),
+                e.getGateAllowedStartTime(),
+                e.getGateAllowedEndTime(),
+                e.getGateAutoApproval()
         );
     }
 }
