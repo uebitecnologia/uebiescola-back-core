@@ -27,12 +27,14 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
     public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+        // Type info via WRAPPER_ARRAY (compativel com List/Optional/generic collections)
+        // em vez de PROPERTY que quebra em objetos nao-polimorficos.
         ObjectMapper mapper = new ObjectMapper()
                 .findAndRegisterModules()
                 .activateDefaultTyping(
                         BasicPolymorphicTypeValidator.builder().allowIfSubType(Object.class).build(),
                         ObjectMapper.DefaultTyping.NON_FINAL,
-                        JsonTypeInfo.As.PROPERTY);
+                        JsonTypeInfo.As.WRAPPER_ARRAY);
 
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(mapper);
 
