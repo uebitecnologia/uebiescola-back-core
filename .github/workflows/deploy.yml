@@ -63,33 +63,55 @@ jobs:
           command_timeout: 15m
           script: |
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
             cd /opt/uebiescola
 
-            # Pull nova imagem
-            docker pull ghcr.io/uebitecnologia/uebiescola-back-core:${{ github.sha }}
-            docker tag ghcr.io/uebitecnologia/uebiescola-back-core:${{ github.sha }} ghcr.io/uebitecnologia/uebiescola-back-core:latest
+            IMAGE=ghcr.io/uebitecnologia/uebiescola-back-core
+            CONTAINER=uebi-core
+            SERVICE=core
 
-            # Restart apenas este container
-            docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate core
+            # 1. Tag imagem atual como :previous (rollback point)
+            docker tag $IMAGE:latest $IMAGE:previous 2>/dev/null || true
 
-            # Restart nginx para re-resolver IP do upstream (evita DNS cache apontando para IP antigo)
+            # 2. Pull nova imagem e aponta :latest
+            docker pull $IMAGE:${{ github.sha }}
+            docker tag $IMAGE:${{ github.sha }} $IMAGE:latest
+
+            # 3. Recreate + restart gateway (re-resolve DNS) + flush cache Redis
+            docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate $SERVICE
             docker restart uebi-gateway || true
+            docker exec uebi-redis redis-cli FLUSHALL >/dev/null 2>&1 || true
 
-            # Health check (informational - não bloqueia o deploy)
-            echo "Aguardando serviço ficar healthy..."
-            for i in $(seq 1 20); do
-              STATUS=$(docker inspect --format='{{.State.Health.Status}}' uebi-core 2>/dev/null || echo "unknown")
-              if [ "$STATUS" = "healthy" ]; then
-                echo "✅ Core Service deployed successfully!"
-                break
+            # 4. Health check com timeout de 5min
+            echo "Aguardando $CONTAINER ficar healthy..."
+            HEALTHY=false
+            for i in $(seq 1 60); do
+              STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' $CONTAINER 2>/dev/null || echo "unknown")
+              if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "running" ]; then
+                if [ "$STATUS" = "healthy" ]; then
+                  HEALTHY=true
+                  echo "✅ $CONTAINER healthy em $((i*5))s"
+                  break
+                fi
               fi
-              echo "  Attempt $i/20 - Status: $STATUS"
-              sleep 10
+              echo "  [$i/60] Status: $STATUS"
+              sleep 5
             done
-            if [ "$STATUS" != "healthy" ]; then
-              echo "⚠️ Core Service still starting (Status: $STATUS) - will become healthy shortly"
-              docker logs uebi-core 2>&1 | tail -10
+
+            # 5. Rollback se nao ficou healthy
+            if [ "$HEALTHY" != "true" ]; then
+              echo "❌ $CONTAINER nao ficou healthy em 5min - ROLLBACK para :previous"
+              docker logs $CONTAINER 2>&1 | tail -30
+              if docker image inspect $IMAGE:previous >/dev/null 2>&1; then
+                docker tag $IMAGE:previous $IMAGE:latest
+                docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate $SERVICE
+                docker restart uebi-gateway || true
+                docker exec uebi-redis redis-cli FLUSHALL >/dev/null 2>&1 || true
+                echo "⏪ Rollback executado"
+              else
+                echo "⚠️ Sem imagem :previous, nao foi possivel rollback"
+              fi
+              exit 1
             fi
 
+            echo "✅ Deploy $SERVICE concluido com sucesso"
             docker image prune -f || true
