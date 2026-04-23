@@ -1,8 +1,7 @@
 package br.com.uebiescola.core.infrastructure.config;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +16,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * Cache Redis usando serializer JSON simples (sem activateDefaultTyping).
+ * Veja plans-service/CacheConfig para historico das tentativas.
+ */
 @Configuration
 @EnableCaching
 public class CacheConfig {
@@ -27,14 +30,9 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
     public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
-        // Type info via WRAPPER_ARRAY (compativel com List/Optional/generic collections)
-        // em vez de PROPERTY que quebra em objetos nao-polimorficos.
         ObjectMapper mapper = new ObjectMapper()
                 .findAndRegisterModules()
-                .activateDefaultTyping(
-                        BasicPolymorphicTypeValidator.builder().allowIfSubType(Object.class).build(),
-                        ObjectMapper.DefaultTyping.NON_FINAL,
-                        JsonTypeInfo.As.WRAPPER_ARRAY);
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(mapper);
 
