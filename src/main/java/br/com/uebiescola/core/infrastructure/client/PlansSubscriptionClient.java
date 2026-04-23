@@ -54,6 +54,10 @@ public interface PlansSubscriptionClient {
             Long schoolId,
             Long planId,
             String billingCycle,
-            String billingType
+            String billingType,
+            String schoolName,
+            String cnpj,
+            String email,
+            String phone
     ) {}
 }

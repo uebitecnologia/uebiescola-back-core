@@ -217,12 +217,17 @@ public class SchoolController {
                             log.warn("[SUB] Falha ao criar/sincronizar subscription da escola {}: {}",
                                     id, e.getMessage());
                         }
-                    } else if (cycle != null || type != null) {
+                    } else {
+                        // Sem planId: ainda assim dispara sync para atualizar customer no Asaas
+                        // (nome/CNPJ/email/telefone podem ter mudado). Se escola nao tem
+                        // subscription, o sync e no-op.
                         try {
                             plansSubscriptionClient.syncSubscription(
                                     new PlansSubscriptionClient.SyncSubscriptionRequest(
-                                            id, null, cycle, type));
-                            log.info("[SUB] Subscription sync apos PUT /schools/{}", id);
+                                            id, null, cycle, type,
+                                            savedSchool.getName(), savedSchool.getCnpj(),
+                                            adminEmail, contactPhone));
+                            log.info("[SUB] Subscription/customer sync apos PUT /schools/{}", id);
                         } catch (Exception e) {
                             log.warn("[SUB] Falha ao sincronizar subscription da escola {}: {}",
                                     id, e.getMessage());
