@@ -15,5 +15,6 @@ public record SchoolRequest(
         Long planId,
         String billingType,   // PIX, BOLETO, CREDIT_CARD, UNDEFINED
         String billingCycle,  // MONTHLY, YEARLY
+        Integer installmentCount, // 1-12, aplicavel a CREDIT_CARD + YEARLY
         String contactPhone   // telefone da escola para cadastro no Asaas
 ) {}

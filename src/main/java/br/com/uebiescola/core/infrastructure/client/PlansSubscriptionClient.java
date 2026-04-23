@@ -36,6 +36,7 @@ public interface PlansSubscriptionClient {
             Long planId,
             String billingType,
             String billingCycle,
+            Integer installmentCount,
             String schoolName,
             String legalName,
             String cnpj,

@@ -79,10 +79,15 @@ public class SchoolController {
     private PlansSubscriptionClient.PaidSubscriptionRequest buildPaidRequest(
             School school, SchoolRequest request, Long planId, String type, String cycle) {
         var addr = school.getAddress();
+        Integer installments = null;
+        if ("CREDIT_CARD".equals(type) && "YEARLY".equals(cycle)) {
+            installments = request.installmentCount() != null ? request.installmentCount() : 12;
+        }
         return new PlansSubscriptionClient.PaidSubscriptionRequest(
                 school.getId(), planId,
                 type != null ? type : "UNDEFINED",
                 cycle != null ? cycle : "MONTHLY",
+                installments,
                 school.getName(),
                 school.getLegalName(),
                 school.getCnpj(),
