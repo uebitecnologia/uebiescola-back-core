@@ -4,10 +4,14 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "plans-subscription-service", url = "${feign.plans-service.url:http://localhost:8082/api/v1}/plans/subscriptions")
+@FeignClient(name = "plans-subscription-service", url = "${feign.plans-service.url:http://localhost:8082/api/v1}/plans")
 public interface PlansSubscriptionClient {
 
-    @PostMapping("/trial")
+    /**
+     * Cria subscription TRIAL (sem cobranca) para escola recem-criada.
+     * Nao usa Asaas. Usado no self-service registration.
+     */
+    @PostMapping("/subscriptions/trial")
     TrialSubscriptionResponse createTrialSubscription(@RequestBody TrialSubscriptionRequest request);
 
     record TrialSubscriptionRequest(Long schoolId, Integer trialDays) {}
@@ -18,5 +22,23 @@ public interface PlansSubscriptionClient {
             String planName,
             String status,
             String trialEndDate
+    ) {}
+
+    /**
+     * Cria subscription PAGA (cria customer + subscription no Asaas).
+     * Usado quando admin CEO cadastra escola com plano escolhido.
+     */
+    @PostMapping("/internal/subscriptions/paid")
+    Object createPaidSubscription(@RequestBody PaidSubscriptionRequest request);
+
+    record PaidSubscriptionRequest(
+            Long schoolId,
+            Long planId,
+            String billingType,
+            String billingCycle,
+            String schoolName,
+            String cnpj,
+            String email,
+            String phone
     ) {}
 }

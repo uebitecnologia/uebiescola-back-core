@@ -8,5 +8,11 @@ public record SchoolRequest(
         Double interestRate,
         AddressRequest address,
         ContractRequest contract,
-        TechnicalRequest technical
+        TechnicalRequest technical,
+
+        // Opcional: se fornecido, cria subscription PAGA no Asaas automaticamente
+        Long planId,
+        String billingType,   // PIX, BOLETO, CREDIT_CARD, UNDEFINED
+        String billingCycle,  // MONTHLY, YEARLY
+        String contactPhone   // telefone da escola para cadastro no Asaas
 ) {}

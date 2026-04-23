@@ -7,11 +7,13 @@ import br.com.uebiescola.core.domain.model.*;
 import br.com.uebiescola.core.domain.model.enums.UserRole;
 import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import br.com.uebiescola.core.domain.repository.UserRepository;
+import br.com.uebiescola.core.infrastructure.client.PlansSubscriptionClient;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
 import br.com.uebiescola.core.presentation.dto.SchoolRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/schools")
 @RequiredArgsConstructor
@@ -37,6 +40,7 @@ public class SchoolController {
     private final FindSchoolsUseCase findSchoolsUseCase;
     private final SchoolRepository schoolRepository;
     private final UserRepository userRepository;
+    private final PlansSubscriptionClient plansSubscriptionClient;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -48,6 +52,42 @@ public class SchoolController {
         School schoolDomain = mapToDomain(newSchool, request);
 
         School created = createSchoolUseCase.execute(schoolDomain, request.technical());
+
+        // Integracao com Asaas: se planId foi fornecido no cadastro, cria customer
+        // + subscription no Asaas automaticamente via plans-service. Se falhar, nao
+        // quebra o cadastro da escola (escola fica sem subscription e pode ser
+        // configurada manualmente depois).
+        if (request.planId() != null && created.getId() != null) {
+            try {
+                plansSubscriptionClient.createPaidSubscription(
+                        new PlansSubscriptionClient.PaidSubscriptionRequest(
+                                created.getId(),
+                                request.planId(),
+                                request.billingType() != null ? request.billingType() : "UNDEFINED",
+                                request.billingCycle() != null ? request.billingCycle() : "MONTHLY",
+                                created.getName(),
+                                created.getCnpj(),
+                                request.technical() != null ? request.technical().adminEmail() : null,
+                                request.contactPhone()
+                        )
+                );
+                log.info("[ASAAS] Subscription paga criada para escola {} (plano {})", created.getId(), request.planId());
+            } catch (Exception e) {
+                log.error("[ASAAS] Falha ao criar subscription paga para escola {} (plano {}): {}. " +
+                        "Escola criada sem assinatura -- configurar manualmente em Assinaturas.",
+                        created.getId(), request.planId(), e.getMessage());
+            }
+        } else if (created.getId() != null) {
+            // Sem plano escolhido: cria subscription TRIAL de 30 dias (sem Asaas)
+            try {
+                plansSubscriptionClient.createTrialSubscription(
+                        new PlansSubscriptionClient.TrialSubscriptionRequest(created.getId(), 30)
+                );
+                log.info("[TRIAL] Subscription trial criada para escola {} (30 dias)", created.getId());
+            } catch (Exception e) {
+                log.warn("[TRIAL] Falha ao criar trial para escola {}: {}", created.getId(), e.getMessage());
+            }
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
