@@ -96,10 +96,10 @@ public class SelfServiceRegistrationUseCase {
 
         log.info("Self-service: nova escola registrada: {} ({})", savedSchool.getName(), savedSchool.getSubdomain());
 
-        // Criar assinatura TRIAL no Plans Service (14 dias)
+        // Criar assinatura TRIAL no Plans Service (7 dias — lei do CDC, direito de arrependimento)
         try {
             var trialResponse = plansSubscriptionClient.createTrialSubscription(
-                    new PlansSubscriptionClient.TrialSubscriptionRequest(savedSchool.getId(), 14));
+                    new PlansSubscriptionClient.TrialSubscriptionRequest(savedSchool.getId(), 7));
             log.info("Assinatura TRIAL criada no Plans Service para escola {}: plano {}",
                     savedSchool.getId(), trialResponse.planName());
         } catch (Exception e) {
