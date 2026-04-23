@@ -35,6 +35,9 @@ public class SchoolEntity {
     @Column(unique = true)
     private String stateRegistration;
 
+    @Column(name = "municipal_registration")
+    private String municipalRegistration;
+
     @Column(unique = true)
     private String subdomain;
 

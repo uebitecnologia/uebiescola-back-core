@@ -37,6 +37,7 @@ public interface PlansSubscriptionClient {
             String billingType,
             String billingCycle,
             String schoolName,
+            String legalName,
             String cnpj,
             String email,
             String phone,
@@ -47,7 +48,9 @@ public interface PlansSubscriptionClient {
             String complement,
             String province,
             String city,
-            String state
+            String state,
+            String municipalInscription,
+            String stateInscription
     ) {}
 
     /**
@@ -79,6 +82,7 @@ public interface PlansSubscriptionClient {
     record EnsureCustomerRequest(
             Long schoolId,
             String schoolName,
+            String legalName,
             String cnpj,
             String email,
             String phone,
@@ -89,6 +93,8 @@ public interface PlansSubscriptionClient {
             String complement,
             String province,
             String city,
-            String state
+            String state,
+            String municipalInscription,
+            String stateInscription
     ) {}
 }

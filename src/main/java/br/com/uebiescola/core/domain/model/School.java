@@ -12,6 +12,7 @@ public class School {
     private String legalName;
     private String cnpj;
     private String stateRegistration;
+    private String municipalRegistration;
     private String subdomain;
     private String primaryColor;
     private String pixKey;

@@ -83,7 +83,9 @@ public class SchoolController {
                 school.getId(), planId,
                 type != null ? type : "UNDEFINED",
                 cycle != null ? cycle : "MONTHLY",
-                school.getName(), school.getCnpj(),
+                school.getName(),
+                school.getLegalName(),
+                school.getCnpj(),
                 resolveAdminEmail(school, request),
                 addr != null ? addr.getPhone() : null,
                 addr != null ? addr.getMobile() : null,
@@ -93,7 +95,9 @@ public class SchoolController {
                 addr != null ? addr.getComplement() : null,
                 addr != null ? addr.getNeighborhood() : null,
                 addr != null ? addr.getCity() : null,
-                addr != null ? addr.getState() : null);
+                addr != null ? addr.getState() : null,
+                school.getMunicipalRegistration(),
+                school.getStateRegistration());
     }
 
     @GetMapping
@@ -293,6 +297,7 @@ public class SchoolController {
         school.setLegalName(request.legalName());
         school.setCnpj(request.cnpj());
         school.setStateRegistration(request.stateRegistration());
+        school.setMunicipalRegistration(request.municipalRegistration());
 
         if (request.technical() != null) {
             school.setSubdomain(request.technical().subdomain());
@@ -351,6 +356,7 @@ public class SchoolController {
                     new PlansSubscriptionClient.EnsureCustomerRequest(
                             school.getId(),
                             school.getName(),
+                            school.getLegalName(),
                             school.getCnpj(),
                             resolveAdminEmail(school, request),
                             addr != null ? addr.getPhone() : null,
@@ -361,7 +367,9 @@ public class SchoolController {
                             addr != null ? addr.getComplement() : null,
                             addr != null ? addr.getNeighborhood() : null,
                             addr != null ? addr.getCity() : null,
-                            addr != null ? addr.getState() : null));
+                            addr != null ? addr.getState() : null,
+                            school.getMunicipalRegistration(),
+                            school.getStateRegistration()));
             log.info("[ASAAS] ensureCustomer disparado para escola {}", school.getId());
         } catch (Exception e) {
             log.warn("[ASAAS] Falha em ensureCustomer da escola {}: {}", school.getId(), e.getMessage());
