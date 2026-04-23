@@ -39,7 +39,15 @@ public interface PlansSubscriptionClient {
             String schoolName,
             String cnpj,
             String email,
-            String phone
+            String phone,
+            String mobilePhone,
+            String postalCode,
+            String address,
+            String addressNumber,
+            String complement,
+            String province,
+            String city,
+            String state
     ) {}
 
     /**
@@ -73,6 +81,14 @@ public interface PlansSubscriptionClient {
             String schoolName,
             String cnpj,
             String email,
-            String phone
+            String phone,
+            String mobilePhone,
+            String postalCode,
+            String address,
+            String addressNumber,
+            String complement,
+            String province,
+            String city,
+            String state
     ) {}
 }

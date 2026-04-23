@@ -62,17 +62,8 @@ public class SchoolController {
             if (request.planId() != null) {
                 try {
                     plansSubscriptionClient.createPaidSubscription(
-                            new PlansSubscriptionClient.PaidSubscriptionRequest(
-                                    created.getId(),
-                                    request.planId(),
-                                    request.billingType() != null ? request.billingType() : "UNDEFINED",
-                                    request.billingCycle() != null ? request.billingCycle() : "MONTHLY",
-                                    created.getName(),
-                                    created.getCnpj(),
-                                    request.technical() != null ? request.technical().adminEmail() : null,
-                                    resolveContactPhone(created, request)
-                            )
-                    );
+                            buildPaidRequest(created, request, request.planId(),
+                                    request.billingType(), request.billingCycle()));
                     log.info("[ASAAS] Subscription paga criada para escola {} (plano {})", created.getId(), request.planId());
                 } catch (Exception e) {
                     log.error("[ASAAS] Falha ao criar subscription paga para escola {} (plano {}): {}. " +
@@ -83,6 +74,26 @@ public class SchoolController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    private PlansSubscriptionClient.PaidSubscriptionRequest buildPaidRequest(
+            School school, SchoolRequest request, Long planId, String type, String cycle) {
+        var addr = school.getAddress();
+        return new PlansSubscriptionClient.PaidSubscriptionRequest(
+                school.getId(), planId,
+                type != null ? type : "UNDEFINED",
+                cycle != null ? cycle : "MONTHLY",
+                school.getName(), school.getCnpj(),
+                resolveAdminEmail(school, request),
+                addr != null ? addr.getPhone() : null,
+                addr != null ? addr.getMobile() : null,
+                addr != null ? addr.getZipCode() : null,
+                addr != null ? addr.getStreet() : null,
+                addr != null ? addr.getNumber() : null,
+                addr != null ? addr.getComplement() : null,
+                addr != null ? addr.getNeighborhood() : null,
+                addr != null ? addr.getCity() : null,
+                addr != null ? addr.getState() : null);
     }
 
     @GetMapping
@@ -187,14 +198,7 @@ public class SchoolController {
                     if (request.planId() != null) {
                         try {
                             plansSubscriptionClient.createPaidSubscription(
-                                    new PlansSubscriptionClient.PaidSubscriptionRequest(
-                                            id, request.planId(),
-                                            type != null ? type : "UNDEFINED",
-                                            cycle != null ? cycle : "MONTHLY",
-                                            savedSchool.getName(),
-                                            savedSchool.getCnpj(),
-                                            resolveAdminEmail(savedSchool, request),
-                                            resolveContactPhone(savedSchool, request)));
+                                    buildPaidRequest(savedSchool, request, request.planId(), type, cycle));
                             log.info("[SUB] createPaidSubscription idempotente apos PUT /schools/{}", id);
                         } catch (Exception e) {
                             log.warn("[SUB] Falha ao criar/sincronizar subscription da escola {}: {}",
@@ -337,9 +341,11 @@ public class SchoolController {
     /**
      * Garante que a escola tem customer correspondente no Asaas. Best-effort:
      * falhas apenas sao logadas. Chamado em todo CREATE e UPDATE de escola.
+     * Envia endereco completo pro Asaas cadastrar o customer com dados ricos.
      */
     private void ensureAsaasCustomer(School school, SchoolRequest request) {
         if (school.getId() == null) return;
+        var addr = school.getAddress();
         try {
             plansSubscriptionClient.ensureAsaasCustomer(
                     new PlansSubscriptionClient.EnsureCustomerRequest(
@@ -347,7 +353,15 @@ public class SchoolController {
                             school.getName(),
                             school.getCnpj(),
                             resolveAdminEmail(school, request),
-                            resolveContactPhone(school, request)));
+                            addr != null ? addr.getPhone() : null,
+                            addr != null ? addr.getMobile() : null,
+                            addr != null ? addr.getZipCode() : null,
+                            addr != null ? addr.getStreet() : null,
+                            addr != null ? addr.getNumber() : null,
+                            addr != null ? addr.getComplement() : null,
+                            addr != null ? addr.getNeighborhood() : null,
+                            addr != null ? addr.getCity() : null,
+                            addr != null ? addr.getState() : null));
             log.info("[ASAAS] ensureCustomer disparado para escola {}", school.getId());
         } catch (Exception e) {
             log.warn("[ASAAS] Falha em ensureCustomer da escola {}: {}", school.getId(), e.getMessage());
