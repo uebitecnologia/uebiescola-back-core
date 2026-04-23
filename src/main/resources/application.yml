@@ -30,6 +30,22 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 2000ms
       connect-timeout: 2000ms
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  mail:
+    from: ${APP_MAIL_FROM:noreply@uebiescola.com.br}
+    frontend-url: ${APP_MAIL_FRONTEND_URL:https://admin.uebiescola.com.br}
 feign:
   plans-service:
     url: ${FEIGN_PLANS_SERVICE_URL:http://localhost:8082/api/v1}

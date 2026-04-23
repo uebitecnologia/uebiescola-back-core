@@ -1,5 +1,6 @@
 package br.com.uebiescola.core.application.usecase;
 
+import br.com.uebiescola.core.application.service.EmailService;
 import br.com.uebiescola.core.domain.model.School;
 import br.com.uebiescola.core.domain.model.SchoolContract;
 import br.com.uebiescola.core.domain.model.User;
@@ -7,6 +8,7 @@ import br.com.uebiescola.core.domain.model.enums.UserRole;
 import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import br.com.uebiescola.core.domain.repository.UserRepository;
 import br.com.uebiescola.core.infrastructure.client.PlansSubscriptionClient;
+import br.com.uebiescola.core.infrastructure.persistence.entity.UserEntity;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import br.com.uebiescola.core.presentation.dto.SchoolRegistrationResponse;
@@ -18,7 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +37,8 @@ public class SelfServiceRegistrationUseCase {
     private final JpaSchoolRepository jpaSchoolRepository;
     private final PasswordEncoder passwordEncoder;
     private final PlansSubscriptionClient plansSubscriptionClient;
+    private final EmailService emailService;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Transactional
     public SchoolRegistrationResponse execute(SelfServiceRegistrationRequest request) {
@@ -95,6 +101,26 @@ public class SelfServiceRegistrationUseCase {
         }
 
         log.info("Self-service: nova escola registrada: {} ({})", savedSchool.getName(), savedSchool.getSubdomain());
+
+        // Gera codigo de 6 digitos, salva no admin user e envia por email.
+        // Login so sera liberado apos verificar o codigo em /auth/register/verify-email.
+        String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+        Long adminId = savedSchool.getAdminUser() != null ? savedSchool.getAdminUser().getId() : null;
+        if (adminId != null) {
+            UserEntity adminEntity = jpaUserRepository.findById(adminId).orElse(null);
+            if (adminEntity != null) {
+                adminEntity.setEmailVerificationCode(code);
+                adminEntity.setEmailVerificationExpiresAt(LocalDateTime.now().plusMinutes(30));
+                adminEntity.setEmailVerifiedAt(null);
+                jpaUserRepository.save(adminEntity);
+            }
+        }
+        try {
+            emailService.sendEmailVerificationCode(request.adminEmail(), request.adminName(), code);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar email de verificacao para {}: {}", request.adminEmail(), e.getMessage());
+            // Nao quebra o registro — CEO pode reenviar pelo /auth/register/resend-code
+        }
 
         // Criar assinatura TRIAL no Plans Service (7 dias — lei do CDC, direito de arrependimento)
         try {

@@ -57,4 +57,15 @@ public class UserEntity {
 
     @Column(name = "lgpd_consent_ip", length = 45)
     private String lgpdConsentIp;
+
+    // Verificacao de email pos-cadastro self-service. emailVerifiedAt null
+    // = nao verificado; login pode ser bloqueado ate validar.
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+
+    @Column(name = "email_verification_code", length = 6)
+    private String emailVerificationCode;
+
+    @Column(name = "email_verification_expires_at")
+    private LocalDateTime emailVerificationExpiresAt;
 }
