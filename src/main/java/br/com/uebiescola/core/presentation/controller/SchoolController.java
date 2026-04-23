@@ -146,6 +146,11 @@ public class SchoolController {
 
         return schoolRepository.findById(id)
                 .map(existingSchool -> {
+                    // Carrega o admin atual ANTES de mapear — senao o null-check abaixo
+                    // acharia que nao ha admin e tentaria criar um novo, violando o
+                    // unique constraint de CPF.
+                    findAdminUserForSchool(id).ifPresent(existingSchool::setAdminUser);
+
                     // 1. Atualiza dados básicos da escola
                     mapToDomain(existingSchool, request);
 
