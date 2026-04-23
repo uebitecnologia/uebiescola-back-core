@@ -14,4 +14,6 @@ public class SchoolContract {
     private BigDecimal setupValue;
     private Integer expirationDay;
     private LocalDate startDate;
+    private String billingCycle;   // MONTHLY, YEARLY
+    private String billingType;    // UNDEFINED, PIX, BOLETO, CREDIT_CARD
 }

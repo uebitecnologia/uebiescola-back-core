@@ -180,6 +180,27 @@ public class SchoolController {
                         userRepository.save(savedAdmin);
                     }
 
+                    // 6. Sincroniza subscription/Asaas quando plano/ciclo/tipo mudam.
+                    // Usa campos a nivel raiz do request (preenchidos pelo frontend
+                    // tanto no create quanto no edit). Se falhar, nao quebra o update
+                    // — o CEO pode sincronizar manualmente via aba Assinaturas.
+                    String cycle = request.billingCycle();
+                    if (cycle == null && request.contract() != null) cycle = request.contract().billingCycle();
+                    String type = request.billingType();
+                    if (type == null && request.contract() != null) type = request.contract().billingType();
+
+                    if (request.planId() != null || cycle != null || type != null) {
+                        try {
+                            plansSubscriptionClient.syncSubscription(
+                                    new PlansSubscriptionClient.SyncSubscriptionRequest(
+                                            id, request.planId(), cycle, type));
+                            log.info("[SYNC] Subscription sincronizada apos PUT /schools/{}", id);
+                        } catch (Exception e) {
+                            log.warn("[SYNC] Falha ao sincronizar subscription da escola {}: {}",
+                                    id, e.getMessage());
+                        }
+                    }
+
                     return ResponseEntity.ok(savedSchool);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -302,6 +323,8 @@ public class SchoolController {
             cont.setSetupValue(request.contract().setupValue());
             cont.setExpirationDay(request.contract().expirationDay());
             cont.setStartDate(request.contract().startDate());
+            if (request.contract().billingCycle() != null) cont.setBillingCycle(request.contract().billingCycle());
+            if (request.contract().billingType() != null)  cont.setBillingType(request.contract().billingType());
         }
         return school;
     }

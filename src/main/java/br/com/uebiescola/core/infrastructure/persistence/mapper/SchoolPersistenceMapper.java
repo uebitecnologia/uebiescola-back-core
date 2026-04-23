@@ -64,6 +64,8 @@ public class SchoolPersistenceMapper {
                     .setupValue(cont.getSetupValue())
                     .expirationDay(cont.getExpirationDay())
                     .startDate(cont.getStartDate())
+                    .billingCycle(cont.getBillingCycle())
+                    .billingType(cont.getBillingType())
                     .school(entity)
                     .build();
             entity.setContract(contractEntity);
@@ -139,6 +141,8 @@ public class SchoolPersistenceMapper {
                 .setupValue(entity.getSetupValue())
                 .expirationDay(entity.getExpirationDay())
                 .startDate(entity.getStartDate())
+                .billingCycle(entity.getBillingCycle())
+                .billingType(entity.getBillingType())
                 .build();
     }
 

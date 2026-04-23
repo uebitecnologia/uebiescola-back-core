@@ -41,4 +41,19 @@ public interface PlansSubscriptionClient {
             String email,
             String phone
     ) {}
+
+    /**
+     * Sincroniza a subscription com mudancas feitas no contrato (PUT /schools/{id}).
+     * Campos null = manter o valor atual. Se a escola nao tem subscription,
+     * nada acontece. Se tem e algo relevante mudou, cancela no Asaas + recria.
+     */
+    @PostMapping("/internal/subscriptions/sync")
+    Object syncSubscription(@RequestBody SyncSubscriptionRequest request);
+
+    record SyncSubscriptionRequest(
+            Long schoolId,
+            Long planId,
+            String billingCycle,
+            String billingType
+    ) {}
 }

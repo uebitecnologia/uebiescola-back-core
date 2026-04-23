@@ -35,4 +35,11 @@ public class SchoolContractEntity {
     private BigDecimal setupValue;
     private Integer expirationDay;
     private LocalDate startDate;
+
+    // Ciclo e forma de cobranca — refletidos na subscription do plans-service / Asaas
+    @Column(name = "billing_cycle")
+    private String billingCycle;
+
+    @Column(name = "billing_type")
+    private String billingType;
 }
