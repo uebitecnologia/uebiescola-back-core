@@ -53,39 +53,32 @@ public class SchoolController {
 
         School created = createSchoolUseCase.execute(schoolDomain, request.technical());
 
-        // Integracao com Asaas: se planId foi fornecido no cadastro, cria customer
-        // + subscription no Asaas automaticamente via plans-service. Se falhar, nao
-        // quebra o cadastro da escola (escola fica sem subscription e pode ser
-        // configurada manualmente depois).
-        if (request.planId() != null && created.getId() != null) {
-            try {
-                plansSubscriptionClient.createPaidSubscription(
-                        new PlansSubscriptionClient.PaidSubscriptionRequest(
-                                created.getId(),
-                                request.planId(),
-                                request.billingType() != null ? request.billingType() : "UNDEFINED",
-                                request.billingCycle() != null ? request.billingCycle() : "MONTHLY",
-                                created.getName(),
-                                created.getCnpj(),
-                                request.technical() != null ? request.technical().adminEmail() : null,
-                                request.contactPhone()
-                        )
-                );
-                log.info("[ASAAS] Subscription paga criada para escola {} (plano {})", created.getId(), request.planId());
-            } catch (Exception e) {
-                log.error("[ASAAS] Falha ao criar subscription paga para escola {} (plano {}): {}. " +
-                        "Escola criada sem assinatura -- configurar manualmente em Assinaturas.",
-                        created.getId(), request.planId(), e.getMessage());
-            }
-        } else if (created.getId() != null) {
-            // Sem plano escolhido: cria subscription TRIAL de 30 dias (sem Asaas)
-            try {
-                plansSubscriptionClient.createTrialSubscription(
-                        new PlansSubscriptionClient.TrialSubscriptionRequest(created.getId(), 30)
-                );
-                log.info("[TRIAL] Subscription trial criada para escola {} (30 dias)", created.getId());
-            } catch (Exception e) {
-                log.warn("[TRIAL] Falha ao criar trial para escola {}: {}", created.getId(), e.getMessage());
+        if (created.getId() != null) {
+            // 1. Sempre cria/atualiza customer no Asaas, independente de plano pago.
+            ensureAsaasCustomer(created, request);
+
+            // 2. Se um plano foi escolhido, cria subscription paga (idempotente:
+            //    se o ensure ja criou TRIAL como placeholder, vira paga agora).
+            if (request.planId() != null) {
+                try {
+                    plansSubscriptionClient.createPaidSubscription(
+                            new PlansSubscriptionClient.PaidSubscriptionRequest(
+                                    created.getId(),
+                                    request.planId(),
+                                    request.billingType() != null ? request.billingType() : "UNDEFINED",
+                                    request.billingCycle() != null ? request.billingCycle() : "MONTHLY",
+                                    created.getName(),
+                                    created.getCnpj(),
+                                    request.technical() != null ? request.technical().adminEmail() : null,
+                                    resolveContactPhone(created, request)
+                            )
+                    );
+                    log.info("[ASAAS] Subscription paga criada para escola {} (plano {})", created.getId(), request.planId());
+                } catch (Exception e) {
+                    log.error("[ASAAS] Falha ao criar subscription paga para escola {} (plano {}): {}. " +
+                            "Escola criada sem assinatura -- configurar manualmente em Assinaturas.",
+                            created.getId(), request.planId(), e.getMessage());
+                }
             }
         }
 
@@ -180,26 +173,16 @@ public class SchoolController {
                         userRepository.save(savedAdmin);
                     }
 
-                    // 6. Sincroniza/cria subscription no plans-service quando CEO
-                    // edita o contrato. Tres cenarios:
-                    //   a) planId informado -> cria (legacy) ou sincroniza (update).
-                    //      A chamada /paid e idempotente: o subscribe detecta
-                    //      subscription ativa e delega para syncSubscription.
-                    //   b) planId null + cycle/type informados -> apenas sync (evita
-                    //      criar sem plano).
-                    //   c) Nada relevante -> no-op.
-                    // Falhas nao quebram o PUT.
+                    // 6. Sincronizacao com Asaas (obrigatorio para todo CREATE/UPDATE).
+                    //    a) Garante customer no Asaas (cria se nao existe, atualiza se existe).
+                    //    b) Se planId informado, cria/atualiza subscription paga (idempotente).
+                    //    Falhas nao quebram o PUT.
+                    ensureAsaasCustomer(savedSchool, request);
+
                     String cycle = request.billingCycle();
                     if (cycle == null && request.contract() != null) cycle = request.contract().billingCycle();
                     String type = request.billingType();
                     if (type == null && request.contract() != null) type = request.contract().billingType();
-                    String contactPhone = request.contactPhone();
-                    if (contactPhone == null && savedSchool.getAddress() != null) {
-                        contactPhone = savedSchool.getAddress().getMobile();
-                        if (contactPhone == null) contactPhone = savedSchool.getAddress().getPhone();
-                    }
-                    String adminEmail = request.technical() != null ? request.technical().adminEmail()
-                            : (savedSchool.getAdminUser() != null ? savedSchool.getAdminUser().getEmail() : null);
 
                     if (request.planId() != null) {
                         try {
@@ -210,26 +193,11 @@ public class SchoolController {
                                             cycle != null ? cycle : "MONTHLY",
                                             savedSchool.getName(),
                                             savedSchool.getCnpj(),
-                                            adminEmail,
-                                            contactPhone));
+                                            resolveAdminEmail(savedSchool, request),
+                                            resolveContactPhone(savedSchool, request)));
                             log.info("[SUB] createPaidSubscription idempotente apos PUT /schools/{}", id);
                         } catch (Exception e) {
                             log.warn("[SUB] Falha ao criar/sincronizar subscription da escola {}: {}",
-                                    id, e.getMessage());
-                        }
-                    } else {
-                        // Sem planId: ainda assim dispara sync para atualizar customer no Asaas
-                        // (nome/CNPJ/email/telefone podem ter mudado). Se escola nao tem
-                        // subscription, o sync e no-op.
-                        try {
-                            plansSubscriptionClient.syncSubscription(
-                                    new PlansSubscriptionClient.SyncSubscriptionRequest(
-                                            id, null, cycle, type,
-                                            savedSchool.getName(), savedSchool.getCnpj(),
-                                            adminEmail, contactPhone));
-                            log.info("[SUB] Subscription/customer sync apos PUT /schools/{}", id);
-                        } catch (Exception e) {
-                            log.warn("[SUB] Falha ao sincronizar subscription da escola {}: {}",
                                     id, e.getMessage());
                         }
                     }
@@ -364,5 +332,45 @@ public class SchoolController {
 
     private Optional<User> findAdminUserForSchool(Long schoolId) {
         return userRepository.findFirstBySchoolIdAndRole(schoolId, UserRole.ROLE_ADMIN);
+    }
+
+    /**
+     * Garante que a escola tem customer correspondente no Asaas. Best-effort:
+     * falhas apenas sao logadas. Chamado em todo CREATE e UPDATE de escola.
+     */
+    private void ensureAsaasCustomer(School school, SchoolRequest request) {
+        if (school.getId() == null) return;
+        try {
+            plansSubscriptionClient.ensureAsaasCustomer(
+                    new PlansSubscriptionClient.EnsureCustomerRequest(
+                            school.getId(),
+                            school.getName(),
+                            school.getCnpj(),
+                            resolveAdminEmail(school, request),
+                            resolveContactPhone(school, request)));
+            log.info("[ASAAS] ensureCustomer disparado para escola {}", school.getId());
+        } catch (Exception e) {
+            log.warn("[ASAAS] Falha em ensureCustomer da escola {}: {}", school.getId(), e.getMessage());
+        }
+    }
+
+    private String resolveContactPhone(School school, SchoolRequest request) {
+        if (request.contactPhone() != null && !request.contactPhone().isBlank()) return request.contactPhone();
+        if (school.getAddress() != null) {
+            if (school.getAddress().getMobile() != null && !school.getAddress().getMobile().isBlank())
+                return school.getAddress().getMobile();
+            if (school.getAddress().getPhone() != null && !school.getAddress().getPhone().isBlank())
+                return school.getAddress().getPhone();
+        }
+        return null;
+    }
+
+    private String resolveAdminEmail(School school, SchoolRequest request) {
+        if (request.technical() != null && request.technical().adminEmail() != null
+                && !request.technical().adminEmail().isBlank()) {
+            return request.technical().adminEmail();
+        }
+        if (school.getAdminUser() != null) return school.getAdminUser().getEmail();
+        return null;
     }
 }

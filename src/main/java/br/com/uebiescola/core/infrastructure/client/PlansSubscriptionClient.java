@@ -60,4 +60,19 @@ public interface PlansSubscriptionClient {
             String email,
             String phone
     ) {}
+
+    /**
+     * Garante que a escola tem um customer correspondente no Asaas.
+     * Chamado em todo CREATE e UPDATE de escola, independente de ter plano pago.
+     */
+    @PostMapping("/internal/subscriptions/ensure-customer")
+    Object ensureAsaasCustomer(@RequestBody EnsureCustomerRequest request);
+
+    record EnsureCustomerRequest(
+            Long schoolId,
+            String schoolName,
+            String cnpj,
+            String email,
+            String phone
+    ) {}
 }
