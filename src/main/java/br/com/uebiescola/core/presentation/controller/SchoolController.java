@@ -180,23 +180,51 @@ public class SchoolController {
                         userRepository.save(savedAdmin);
                     }
 
-                    // 6. Sincroniza subscription/Asaas quando plano/ciclo/tipo mudam.
-                    // Usa campos a nivel raiz do request (preenchidos pelo frontend
-                    // tanto no create quanto no edit). Se falhar, nao quebra o update
-                    // — o CEO pode sincronizar manualmente via aba Assinaturas.
+                    // 6. Sincroniza/cria subscription no plans-service quando CEO
+                    // edita o contrato. Tres cenarios:
+                    //   a) planId informado -> cria (legacy) ou sincroniza (update).
+                    //      A chamada /paid e idempotente: o subscribe detecta
+                    //      subscription ativa e delega para syncSubscription.
+                    //   b) planId null + cycle/type informados -> apenas sync (evita
+                    //      criar sem plano).
+                    //   c) Nada relevante -> no-op.
+                    // Falhas nao quebram o PUT.
                     String cycle = request.billingCycle();
                     if (cycle == null && request.contract() != null) cycle = request.contract().billingCycle();
                     String type = request.billingType();
                     if (type == null && request.contract() != null) type = request.contract().billingType();
+                    String contactPhone = request.contactPhone();
+                    if (contactPhone == null && savedSchool.getAddress() != null) {
+                        contactPhone = savedSchool.getAddress().getMobile();
+                        if (contactPhone == null) contactPhone = savedSchool.getAddress().getPhone();
+                    }
+                    String adminEmail = request.technical() != null ? request.technical().adminEmail()
+                            : (savedSchool.getAdminUser() != null ? savedSchool.getAdminUser().getEmail() : null);
 
-                    if (request.planId() != null || cycle != null || type != null) {
+                    if (request.planId() != null) {
+                        try {
+                            plansSubscriptionClient.createPaidSubscription(
+                                    new PlansSubscriptionClient.PaidSubscriptionRequest(
+                                            id, request.planId(),
+                                            type != null ? type : "UNDEFINED",
+                                            cycle != null ? cycle : "MONTHLY",
+                                            savedSchool.getName(),
+                                            savedSchool.getCnpj(),
+                                            adminEmail,
+                                            contactPhone));
+                            log.info("[SUB] createPaidSubscription idempotente apos PUT /schools/{}", id);
+                        } catch (Exception e) {
+                            log.warn("[SUB] Falha ao criar/sincronizar subscription da escola {}: {}",
+                                    id, e.getMessage());
+                        }
+                    } else if (cycle != null || type != null) {
                         try {
                             plansSubscriptionClient.syncSubscription(
                                     new PlansSubscriptionClient.SyncSubscriptionRequest(
-                                            id, request.planId(), cycle, type));
-                            log.info("[SYNC] Subscription sincronizada apos PUT /schools/{}", id);
+                                            id, null, cycle, type));
+                            log.info("[SUB] Subscription sync apos PUT /schools/{}", id);
                         } catch (Exception e) {
-                            log.warn("[SYNC] Falha ao sincronizar subscription da escola {}: {}",
+                            log.warn("[SUB] Falha ao sincronizar subscription da escola {}: {}",
                                     id, e.getMessage());
                         }
                     }
