@@ -1,7 +1,5 @@
 package br.com.uebiescola.core.infrastructure.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +15,8 @@ import java.time.Duration;
 import java.util.Map;
 
 /**
- * Cache Redis usando serializer JSON simples (sem activateDefaultTyping).
- * Veja plans-service/CacheConfig para historico das tentativas.
+ * Cache Redis usando GenericJackson2JsonRedisSerializer SEM args.
+ * Veja plans-service/CacheConfig para historico.
  */
 @Configuration
 @EnableCaching
@@ -30,11 +28,7 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
     public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
-        ObjectMapper mapper = new ObjectMapper()
-                .findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(mapper);
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))
