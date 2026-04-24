@@ -205,9 +205,12 @@ public class SchoolController {
 
                     // 6. Sincronizacao com Asaas (obrigatorio para todo CREATE/UPDATE).
                     //    a) Garante customer no Asaas (cria se nao existe, atualiza se existe).
-                    //    b) Se planId informado, cria/atualiza subscription paga (idempotente).
+                    //    b) Garante subconta (marketplace) — idempotente no plans-service,
+                    //       util pra escolas legadas ganharem subconta apenas editando.
+                    //    c) Se planId informado, cria/atualiza subscription paga (idempotente).
                     //    Falhas nao quebram o PUT.
                     ensureAsaasCustomer(savedSchool, request);
+                    ensureAsaasSubaccount(savedSchool, request);
 
                     String cycle = request.billingCycle();
                     if (cycle == null && request.contract() != null) cycle = request.contract().billingCycle();
