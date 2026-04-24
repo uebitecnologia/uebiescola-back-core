@@ -57,6 +57,11 @@ public class SchoolController {
             // 1. Sempre cria/atualiza customer no Asaas, independente de plano pago.
             ensureAsaasCustomer(created, request);
 
+            // 1b. Cria subconta Asaas (modelo marketplace) — escola vai receber
+            // os pagamentos dos pais direto na subconta dela. Opcional split pra
+            // UebiEscola configurado em Admin > Asaas.
+            ensureAsaasSubaccount(created, request);
+
             // 2. Se um plano foi escolhido, cria subscription paga (idempotente:
             //    se o ensure ja criou TRIAL como placeholder, vira paga agora).
             if (request.planId() != null) {
@@ -351,6 +356,37 @@ public class SchoolController {
 
     private Optional<User> findAdminUserForSchool(Long schoolId) {
         return userRepository.findFirstBySchoolIdAndRole(schoolId, UserRole.ROLE_ADMIN);
+    }
+
+    /**
+     * Cria subconta Asaas (marketplace) da escola em todo CREATE. Best-effort:
+     * falha nao quebra o cadastro. Idempotente no plans-service.
+     */
+    private void ensureAsaasSubaccount(School school, SchoolRequest request) {
+        if (school.getId() == null) return;
+        var addr = school.getAddress();
+        try {
+            plansSubscriptionClient.ensureAsaasSubaccount(
+                    new PlansSubscriptionClient.EnsureSubaccountRequest(
+                            school.getId(),
+                            school.getName(),
+                            school.getLegalName(),
+                            school.getCnpj(),
+                            resolveAdminEmail(school, request),
+                            addr != null ? addr.getPhone() : null,
+                            addr != null ? addr.getMobile() : null,
+                            addr != null ? addr.getZipCode() : null,
+                            addr != null ? addr.getStreet() : null,
+                            addr != null ? addr.getNumber() : null,
+                            addr != null ? addr.getComplement() : null,
+                            addr != null ? addr.getNeighborhood() : null,
+                            "LIMITED",
+                            null
+                    ));
+            log.info("[ASAAS-SUB] ensureSubaccount disparado para escola {}", school.getId());
+        } catch (Exception e) {
+            log.warn("[ASAAS-SUB] Falha em subconta da escola {}: {}", school.getId(), e.getMessage());
+        }
     }
 
     /**

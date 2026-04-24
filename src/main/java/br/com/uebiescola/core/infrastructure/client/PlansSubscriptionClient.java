@@ -98,4 +98,29 @@ public interface PlansSubscriptionClient {
             String municipalInscription,
             String stateInscription
     ) {}
+
+    /**
+     * Cria subconta Asaas (marketplace) da escola. UebiEscola e a master; cada
+     * escola ganha sua propria subconta. Finance-service depois usa a apiKey
+     * da subconta pra emitir boletos em nome da escola.
+     */
+    @PostMapping("/internal/subscriptions/subaccount")
+    Object ensureAsaasSubaccount(@RequestBody EnsureSubaccountRequest request);
+
+    record EnsureSubaccountRequest(
+            Long schoolId,
+            String name,
+            String legalName,
+            String cnpj,
+            String email,
+            String phone,
+            String mobilePhone,
+            String postalCode,
+            String address,
+            String addressNumber,
+            String complement,
+            String province,
+            String companyType,
+            String birthDate
+    ) {}
 }
