@@ -2,12 +2,17 @@ package br.com.uebiescola.core.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "school_contracts")
+@SQLDelete(sql = "UPDATE school_contracts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @Builder
@@ -42,4 +47,7 @@ public class SchoolContractEntity {
 
     @Column(name = "billing_type")
     private String billingType;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

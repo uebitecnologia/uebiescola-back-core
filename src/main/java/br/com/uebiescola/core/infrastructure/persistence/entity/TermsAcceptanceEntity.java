@@ -3,11 +3,15 @@ package br.com.uebiescola.core.infrastructure.persistence.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "terms_acceptances")
+@SQLDelete(sql = "UPDATE terms_acceptances SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,4 +41,7 @@ public class TermsAcceptanceEntity {
 
     @Column(name = "user_agent", columnDefinition = "TEXT")
     private String userAgent;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

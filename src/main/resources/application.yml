@@ -30,6 +30,11 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 2000ms
       connect-timeout: 2000ms
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -70,3 +75,11 @@ management:
   endpoint:
     health:
       show-details: always
+# Swagger UI servido via gateway sob o prefixo do servico
+springdoc:
+  swagger-ui:
+    path: /api/v1/core/swagger.html
+    config-url: /api/v1/core/api-docs/swagger-config
+    url: /api/v1/core/api-docs
+  api-docs:
+    path: /api/v1/core/api-docs

@@ -24,6 +24,6 @@ public interface JpaSchoolRepository extends JpaRepository<SchoolEntity, Long> {
     List<Object[]> countSchoolsByPlan();
 
     @Query(value = "SELECT to_char(created_at, 'Mon/YY') as month, count(*) as total " +
-            "FROM schools GROUP BY month ORDER BY min(created_at)", nativeQuery = true)
+            "FROM schools WHERE deleted_at IS NULL GROUP BY month ORDER BY min(created_at)", nativeQuery = true)
     List<GrowthStatsProjection> getGrowthStats();
 }

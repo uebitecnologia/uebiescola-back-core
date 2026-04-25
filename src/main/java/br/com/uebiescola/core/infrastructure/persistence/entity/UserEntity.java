@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.validator.constraints.br.CPF;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -13,6 +15,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "schoolId", type = Long.class))
 @Filter(name = "tenantFilter", condition = "school_id = :schoolId")
@@ -68,4 +72,7 @@ public class UserEntity {
 
     @Column(name = "email_verification_expires_at")
     private LocalDateTime emailVerificationExpiresAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

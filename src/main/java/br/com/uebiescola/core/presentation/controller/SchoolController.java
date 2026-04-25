@@ -1,6 +1,7 @@
 package br.com.uebiescola.core.presentation.controller;
 
 import br.com.uebiescola.core.application.usecase.CreateSchoolUseCase;
+import br.com.uebiescola.core.application.usecase.DeleteSchoolUseCase;
 import br.com.uebiescola.core.application.usecase.FindSchoolsUseCase;
 import br.com.uebiescola.core.domain.exception.ResourceNotFoundException;
 import br.com.uebiescola.core.domain.model.*;
@@ -37,6 +38,7 @@ import java.util.UUID;
 public class SchoolController {
 
     private final CreateSchoolUseCase createSchoolUseCase;
+    private final DeleteSchoolUseCase deleteSchoolUseCase;
     private final FindSchoolsUseCase findSchoolsUseCase;
     private final SchoolRepository schoolRepository;
     private final UserRepository userRepository;
@@ -239,6 +241,13 @@ public class SchoolController {
     public ResponseEntity<Void> toggleStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
         boolean newStatus = "ACTIVE".equalsIgnoreCase(body.get("status"));
         schoolRepository.updateStatus(id, newStatus);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('CEO')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        deleteSchoolUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
 

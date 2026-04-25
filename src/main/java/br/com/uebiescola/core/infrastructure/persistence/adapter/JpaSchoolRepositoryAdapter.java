@@ -86,6 +86,13 @@ public class JpaSchoolRepositoryAdapter implements SchoolRepository {
         jpaRepository.updateStatus(id, status);
     }
 
+    @Override
+    @Transactional
+    public void deleteById(Long id) {
+        // Hibernate intercepta via @SQLDelete na SchoolEntity → vira UPDATE deleted_at.
+        jpaRepository.deleteById(id);
+    }
+
     /**
      * Helper para inicializar campos Lazy e evitar "could not initialize proxy"
      */

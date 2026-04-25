@@ -11,4 +11,5 @@ public interface SchoolRepository {
     List<School> findAll();
     Optional<School> findBySubdomain(String subdomain);
     void updateStatus(Long id, boolean status);
+    void deleteById(Long id);
 }
