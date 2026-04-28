@@ -55,6 +55,7 @@ public class SecurityConfig {
                         // Nginx nao expoe /v1/internal/* externamente.
                         .requestMatchers("/api/v1/internal/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml", "/api/v1/core/swagger.html", "/api/v1/core/swagger-ui/**", "/api/v1/core/api-docs/**", "/api/v1/core/api-docs").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()

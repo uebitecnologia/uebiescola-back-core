@@ -85,6 +85,39 @@ public class SchoolSettingsEntity {
     @Column(name = "dunning_days_third")
     private Integer dunningDaysThird = 15;
 
+    @Column(name = "discount_percent")
+    private BigDecimal discountPercent;
+
+    @Column(name = "discount_limit_days")
+    private Integer discountLimitDays;
+
+    @Builder.Default
+    @Column(name = "accept_pix")
+    private Boolean acceptPix = true;
+
+    @Builder.Default
+    @Column(name = "accept_boleto")
+    private Boolean acceptBoleto = true;
+
+    @Builder.Default
+    @Column(name = "accept_card")
+    private Boolean acceptCard = true;
+
+    @Builder.Default
+    @Column(name = "max_installments")
+    private Integer maxInstallments = 12;
+
+    @Builder.Default
+    @Column(name = "nfse_enabled")
+    private Boolean nfseEnabled = false;
+
+    @Builder.Default
+    @Column(name = "nfse_auto_emit")
+    private Boolean nfseAutoEmit = false;
+
+    @Column(name = "invoice_description")
+    private String invoiceDescription;
+
     // ==================== PEDAGOGICO ====================
     @Builder.Default
     @Column(name = "grade_scale_type")

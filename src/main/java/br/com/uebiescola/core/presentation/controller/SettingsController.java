@@ -73,6 +73,15 @@ public class SettingsController {
         if (dto.dunningDaysFirst() != null) settings.setDunningDaysFirst(dto.dunningDaysFirst());
         if (dto.dunningDaysSecond() != null) settings.setDunningDaysSecond(dto.dunningDaysSecond());
         if (dto.dunningDaysThird() != null) settings.setDunningDaysThird(dto.dunningDaysThird());
+        if (dto.discountPercent() != null) settings.setDiscountPercent(dto.discountPercent());
+        if (dto.discountLimitDays() != null) settings.setDiscountLimitDays(dto.discountLimitDays());
+        if (dto.acceptPix() != null) settings.setAcceptPix(dto.acceptPix());
+        if (dto.acceptBoleto() != null) settings.setAcceptBoleto(dto.acceptBoleto());
+        if (dto.acceptCard() != null) settings.setAcceptCard(dto.acceptCard());
+        if (dto.maxInstallments() != null) settings.setMaxInstallments(dto.maxInstallments());
+        if (dto.nfseEnabled() != null) settings.setNfseEnabled(dto.nfseEnabled());
+        if (dto.nfseAutoEmit() != null) settings.setNfseAutoEmit(dto.nfseAutoEmit());
+        if (dto.invoiceDescription() != null) settings.setInvoiceDescription(dto.invoiceDescription());
 
         // Pedagogico
         if (dto.gradeScaleType() != null) settings.setGradeScaleType(dto.gradeScaleType());
@@ -197,6 +206,15 @@ public class SettingsController {
                 e.getDunningDaysFirst(),
                 e.getDunningDaysSecond(),
                 e.getDunningDaysThird(),
+                e.getDiscountPercent(),
+                e.getDiscountLimitDays(),
+                e.getAcceptPix(),
+                e.getAcceptBoleto(),
+                e.getAcceptCard(),
+                e.getMaxInstallments(),
+                e.getNfseEnabled(),
+                e.getNfseAutoEmit(),
+                e.getInvoiceDescription(),
                 e.getGradeScaleType(),
                 e.getPassingGrade(),
                 e.getMinimumAttendancePercent(),

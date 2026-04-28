@@ -21,6 +21,15 @@ public record SchoolSettingsDTO(
         Integer dunningDaysFirst,
         Integer dunningDaysSecond,
         Integer dunningDaysThird,
+        BigDecimal discountPercent,
+        Integer discountLimitDays,
+        Boolean acceptPix,
+        Boolean acceptBoleto,
+        Boolean acceptCard,
+        Integer maxInstallments,
+        Boolean nfseEnabled,
+        Boolean nfseAutoEmit,
+        String invoiceDescription,
 
         // Pedagogico
         String gradeScaleType,
