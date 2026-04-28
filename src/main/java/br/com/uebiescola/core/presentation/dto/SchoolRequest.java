@@ -1,7 +1,9 @@
 package br.com.uebiescola.core.presentation.dto;
 
+import br.com.uebiescola.core.presentation.validation.ValidCNPJ;
+
 public record SchoolRequest(
-        String name, String legalName, String cnpj, String stateRegistration,
+        String name, String legalName, @ValidCNPJ String cnpj, String stateRegistration,
         String municipalRegistration,
         String primaryColor,
         String pixKey,
