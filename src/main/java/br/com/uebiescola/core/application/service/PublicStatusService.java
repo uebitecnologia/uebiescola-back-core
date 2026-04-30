@@ -118,6 +118,7 @@ public class PublicStatusService {
         }
 
         IncidentsBundle bundle = readIncidents();
+        applyDayOverrides(componentList, bundle.dayOverrides);
 
         // Status geral
         String overall = OPERATIONAL;
@@ -243,6 +244,22 @@ public class PublicStatusService {
         return out;
     }
 
+    @SuppressWarnings("unchecked")
+    private void applyDayOverrides(List<Map<String, Object>> components, Map<String, String> overrides) {
+        if (overrides == null || overrides.isEmpty()) return;
+        for (Map<String, Object> c : components) {
+            List<Map<String, Object>> hist = (List<Map<String, Object>>) c.get("history");
+            if (hist == null) continue;
+            for (Map<String, Object> day : hist) {
+                String date = (String) day.get("date");
+                String override = overrides.get(date);
+                if (override != null) {
+                    day.put("status", override);
+                }
+            }
+        }
+    }
+
     private IncidentsBundle readIncidents() {
         IncidentsBundle bundle = new IncidentsBundle();
         File f = new File(incidentsPath);
@@ -273,6 +290,12 @@ public class PublicStatusService {
                 m.put("description", maintenance.path("description").asText(""));
                 bundle.nextMaintenance = m;
                 bundle.activeMaintenance = maintenance.path("active").asBoolean(false);
+            }
+            JsonNode dayOverrides = root.path("dayOverrides");
+            if (dayOverrides.isObject()) {
+                Map<String, String> map = new HashMap<>();
+                dayOverrides.fields().forEachRemaining(e -> map.put(e.getKey(), e.getValue().asText()));
+                bundle.dayOverrides = map;
             }
         } catch (Exception e) {
             log.warn("[PUBLIC-STATUS] Falha ao ler incidents.json: {}", e.getMessage());
@@ -305,5 +328,6 @@ public class PublicStatusService {
         List<Map<String, Object>> incidents = Collections.emptyList();
         Map<String, Object> nextMaintenance = null;
         boolean activeMaintenance = false;
+        Map<String, String> dayOverrides = Collections.emptyMap();
     }
 }
