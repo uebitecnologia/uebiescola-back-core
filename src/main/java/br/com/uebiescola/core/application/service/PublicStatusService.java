@@ -11,6 +11,9 @@ import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 import java.io.File;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -181,7 +184,8 @@ public class PublicStatusService {
     private Map<String, Integer> queryCurrentUp() {
         Map<String, Integer> out = new HashMap<>();
         try {
-            String url = prometheusUrl + "/api/v1/query?query=up%7Bjob%3D%22uebiescola-services%22%7D";
+            String query = URLEncoder.encode("up{job=\"uebiescola-services\"}", StandardCharsets.UTF_8);
+            URI url = URI.create(prometheusUrl + "/api/v1/query?query=" + query);
             String body = restTemplate.getForObject(url, String.class);
             if (body == null) return out;
             JsonNode root = mapper.readTree(body);
@@ -211,9 +215,9 @@ public class PublicStatusService {
             long now = Instant.now().getEpochSecond();
             long start = now - (HISTORY_DAYS * 24L * 3600L);
             int step = 24 * 3600; // 1d
-            String query = "min_over_time(up%7Bjob%3D%22uebiescola-services%22%7D%5B1d%5D)";
-            String url = String.format("%s/api/v1/query_range?query=%s&start=%d&end=%d&step=%d",
-                    prometheusUrl, query, start, now, step);
+            String query = URLEncoder.encode("min_over_time(up{job=\"uebiescola-services\"}[1d])", StandardCharsets.UTF_8);
+            URI url = URI.create(String.format("%s/api/v1/query_range?query=%s&start=%d&end=%d&step=%d",
+                    prometheusUrl, query, start, now, step));
             String body = restTemplate.getForObject(url, String.class);
             if (body == null) return out;
             JsonNode root = mapper.readTree(body);
