@@ -108,27 +108,27 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(saved));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<UserDTO> getUser(
-            @PathVariable Long id,
+            @PathVariable UUID uuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return userRepository.findById(id)
+        return userRepository.findByExternalId(uuid)
                 .filter(entity -> hasAccessToUser(user, entity))
                 .map(entity -> ResponseEntity.ok(toDTO(entity)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<?> updateSchoolUser(
-            @PathVariable Long id,
+            @PathVariable UUID uuid,
             @RequestBody UserDTO dto,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return userRepository.findById(id)
+        return userRepository.findByExternalId(uuid)
                 .filter(entity -> hasAccessToUser(user, entity))
                 .map(entity -> {
                     if (dto.name() != null) entity.setName(dto.name());
@@ -156,15 +156,15 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/{uuid}/status")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<UserDTO> toggleStatus(
-            @PathVariable Long id,
+            @PathVariable UUID uuid,
             @RequestBody Map<String, Boolean> body,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return userRepository.findById(id)
+        return userRepository.findByExternalId(uuid)
                 .filter(entity -> hasAccessToUser(user, entity))
                 .map(entity -> {
                     entity.setActive(body.getOrDefault("active", !entity.getActive()));
@@ -174,14 +174,14 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<Void> deleteUser(
-            @PathVariable Long id,
+            @PathVariable UUID uuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return userRepository.findById(id)
+        return userRepository.findByExternalId(uuid)
                 .filter(entity -> hasAccessToUser(user, entity))
                 .map(entity -> {
                     userRepository.delete(entity);
@@ -231,14 +231,14 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(saved));
     }
 
-    @PutMapping("/ceo-team/{id}")
+    @PutMapping("/ceo-team/{uuid}")
     @PreAuthorize("hasRole('CEO')")
     @Transactional
     public ResponseEntity<?> updateCeoTeamMember(
-            @PathVariable Long id,
+            @PathVariable UUID uuid,
             @RequestBody UserDTO dto) {
 
-        return userRepository.findById(id)
+        return userRepository.findByExternalId(uuid)
                 .filter(entity -> entity.getSchoolId() == null)
                 .map(entity -> {
                     if (dto.name() != null) entity.setName(dto.name());
@@ -253,14 +253,14 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/ceo-team/{id}/status")
+    @PatchMapping("/ceo-team/{uuid}/status")
     @PreAuthorize("hasRole('CEO')")
     @Transactional
     public ResponseEntity<UserDTO> toggleCeoTeamStatus(
-            @PathVariable Long id,
+            @PathVariable UUID uuid,
             @RequestBody Map<String, Boolean> body) {
 
-        return userRepository.findById(id)
+        return userRepository.findByExternalId(uuid)
                 .filter(entity -> entity.getSchoolId() == null)
                 .map(entity -> {
                     entity.setActive(body.getOrDefault("active", !entity.getActive()));

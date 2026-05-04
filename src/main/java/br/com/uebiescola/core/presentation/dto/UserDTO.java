@@ -2,7 +2,7 @@ package br.com.uebiescola.core.presentation.dto;
 
 public record UserDTO(
         Long id,
-        String externalId,
+        String uuid,
         String name,
         String cpf,
         String email,

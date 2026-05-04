@@ -7,9 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface JpaUserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByEmail(String email);
+    Optional<UserEntity> findByExternalId(UUID externalId);
     List<UserEntity> findAllBySchoolId(Long schoolId);
     Optional<UserEntity> findFirstBySchoolIdAndRole(Long schoolId, UserRole role);
     List<UserEntity> findAllBySchoolIdIsNull();
