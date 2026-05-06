@@ -316,6 +316,7 @@ public class SchoolController {
                 .map(school -> {
                     School publicInfo = new School();
                     publicInfo.setId(school.getId());
+                    publicInfo.setUuid(school.getUuid());
                     publicInfo.setName(school.getName());
                     publicInfo.setSubdomain(school.getSubdomain());
                     publicInfo.setActive(school.getActive());
