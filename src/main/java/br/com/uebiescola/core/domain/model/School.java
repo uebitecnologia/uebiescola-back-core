@@ -3,9 +3,11 @@ package br.com.uebiescola.core.domain.model;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
 public class School {
+    @JsonIgnore
     private Long id;
     private UUID uuid;
     private UUID externalId;

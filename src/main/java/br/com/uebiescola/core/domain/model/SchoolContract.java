@@ -4,9 +4,11 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class SchoolContract {
+    @JsonIgnore
     private Long id;
     private String planBase;
     private List<String> activeModules;

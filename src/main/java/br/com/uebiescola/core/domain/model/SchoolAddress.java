@@ -1,10 +1,12 @@
 package br.com.uebiescola.core.domain.model;
 
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 // br.com.uebiescola.core.domain.model.SchoolAddress
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class SchoolAddress {
+    @JsonIgnore
     private Long id; // ADICIONE ISSO AQUI
     private String zipCode;
     private String street;
