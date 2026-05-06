@@ -19,6 +19,7 @@ public class SchoolPersistenceMapper {
 
         SchoolEntity entity = SchoolEntity.builder()
                 .id(domain.getId())
+                .uuid(domain.getUuid())
                 .externalId(domain.getExternalId() != null ? domain.getExternalId() : UUID.randomUUID())
                 .name(domain.getName())
                 .legalName(domain.getLegalName())
@@ -96,6 +97,7 @@ public class SchoolPersistenceMapper {
 
         return School.builder()
                 .id(entity.getId())
+                .uuid(entity.getUuid())
                 .externalId(entity.getExternalId())
                 .name(entity.getName())
                 .legalName(entity.getLegalName())

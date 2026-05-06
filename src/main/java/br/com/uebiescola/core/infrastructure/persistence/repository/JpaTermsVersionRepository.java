@@ -9,10 +9,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface JpaTermsVersionRepository extends JpaRepository<TermsVersionEntity, Long> {
 
     Optional<TermsVersionEntity> findFirstByTypeAndActiveTrueOrderByCreatedAtDesc(TermsType type);
+
+    Optional<TermsVersionEntity> findByUuid(UUID uuid);
 
     List<TermsVersionEntity> findByTypeAndActiveTrue(TermsType type);
 

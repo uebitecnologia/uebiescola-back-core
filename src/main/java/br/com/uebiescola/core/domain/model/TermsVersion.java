@@ -4,6 +4,7 @@ import br.com.uebiescola.core.domain.model.enums.TermsType;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class TermsVersion {
     private Long id;
+    private UUID uuid;
     private TermsType type;
     private String title;
     private String content;

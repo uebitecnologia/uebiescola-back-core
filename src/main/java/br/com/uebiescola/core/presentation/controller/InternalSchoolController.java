@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Endpoint INTERNO (service-to-service) para lookup de dados da escola
@@ -38,14 +39,29 @@ public class InternalSchoolController {
     @GetMapping("/{schoolId}/admin")
     public ResponseEntity<Map<String, Object>> getAdmin(@PathVariable Long schoolId) {
         SchoolEntity school = schoolRepository.findById(schoolId).orElse(null);
+        return buildAdminResponse(school);
+    }
+
+    /**
+     * Variante UUID-first do lookup de admin. Usada por chamadas service-to-service
+     * que ja migraram para identificadores UUID. Resolve UUID -> Long internamente.
+     */
+    @GetMapping("/by-uuid/{schoolUuid}/admin")
+    public ResponseEntity<Map<String, Object>> getAdminByUuid(@PathVariable UUID schoolUuid) {
+        SchoolEntity school = schoolRepository.findByUuid(schoolUuid).orElse(null);
+        return buildAdminResponse(school);
+    }
+
+    private ResponseEntity<Map<String, Object>> buildAdminResponse(SchoolEntity school) {
         if (school == null) {
             return ResponseEntity.notFound().build();
         }
 
-        UserEntity admin = userRepository.findFirstBySchoolIdAndRole(schoolId, UserRole.ROLE_ADMIN).orElse(null);
+        UserEntity admin = userRepository.findFirstBySchoolIdAndRole(school.getId(), UserRole.ROLE_ADMIN).orElse(null);
 
         Map<String, Object> resp = new HashMap<>();
-        resp.put("schoolId", schoolId);
+        resp.put("schoolId", school.getId());
+        resp.put("schoolUuid", school.getUuid());
         resp.put("schoolName", school.getName());
         resp.put("subdomain", school.getSubdomain());
         resp.put("adminEmail", admin != null ? admin.getEmail() : null);

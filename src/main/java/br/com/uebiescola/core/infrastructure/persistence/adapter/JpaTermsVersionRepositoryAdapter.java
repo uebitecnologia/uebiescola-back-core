@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -28,6 +29,11 @@ public class JpaTermsVersionRepositoryAdapter implements TermsVersionRepository 
     @Override
     public Optional<TermsVersion> findById(Long id) {
         return jpaRepository.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<TermsVersion> findByUuid(UUID uuid) {
+        return jpaRepository.findByUuid(uuid).map(this::toDomain);
     }
 
     @Override
@@ -58,6 +64,7 @@ public class JpaTermsVersionRepositoryAdapter implements TermsVersionRepository 
     private TermsVersionEntity toEntity(TermsVersion domain) {
         return TermsVersionEntity.builder()
                 .id(domain.getId())
+                .uuid(domain.getUuid())
                 .type(domain.getType())
                 .title(domain.getTitle())
                 .content(domain.getContent())
@@ -71,6 +78,7 @@ public class JpaTermsVersionRepositoryAdapter implements TermsVersionRepository 
     private TermsVersion toDomain(TermsVersionEntity entity) {
         return TermsVersion.builder()
                 .id(entity.getId())
+                .uuid(entity.getUuid())
                 .type(entity.getType())
                 .title(entity.getTitle())
                 .content(entity.getContent())

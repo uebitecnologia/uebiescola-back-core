@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -52,6 +53,8 @@ class AccessLevelControllerTest {
     private AuthenticatedUser adminUser;
     private AuthenticatedUser ceoUser;
     private AccessLevelEntity sampleEntity;
+    private UUID sampleUuid;
+    private UUID systemUuid;
 
     private static RequestPostProcessor authenticated(AuthenticatedUser user) {
         return request -> {
@@ -68,8 +71,11 @@ class AccessLevelControllerTest {
         adminUser = new AuthenticatedUser("admin@escola.com", "ROLE_ADMIN", 1L, "ext-admin");
         ceoUser = new AuthenticatedUser("ceo@uebi.com", "ROLE_CEO", null, "ext-ceo");
 
+        sampleUuid = UUID.randomUUID();
+        systemUuid = UUID.randomUUID();
         sampleEntity = AccessLevelEntity.builder()
                 .id(1L)
+                .uuid(sampleUuid)
                 .schoolId(1L)
                 .name("Professor")
                 .description("Nível de acesso para professores")
@@ -110,9 +116,9 @@ class AccessLevelControllerTest {
 
     @Test
     void getById_shouldReturn200WhenFound() throws Exception {
-        when(repository.findById(1L)).thenReturn(Optional.of(sampleEntity));
+        when(repository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleEntity));
 
-        mockMvc.perform(get("/api/v1/access-levels/1")
+        mockMvc.perform(get("/api/v1/access-levels/" + sampleUuid)
                         .with(authenticated(adminUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -121,9 +127,10 @@ class AccessLevelControllerTest {
 
     @Test
     void getById_shouldReturn404WhenNotFound() throws Exception {
-        when(repository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(repository.findByUuid(missing)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/v1/access-levels/999")
+        mockMvc.perform(get("/api/v1/access-levels/" + missing)
                         .with(authenticated(adminUser)))
                 .andExpect(status().isNotFound());
     }
@@ -152,7 +159,7 @@ class AccessLevelControllerTest {
 
     @Test
     void update_shouldReturn200() throws Exception {
-        when(repository.findById(1L)).thenReturn(Optional.of(sampleEntity));
+        when(repository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleEntity));
         when(repository.save(any(AccessLevelEntity.class))).thenReturn(sampleEntity);
 
         String json = """
@@ -163,7 +170,7 @@ class AccessLevelControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/access-levels/1")
+        mockMvc.perform(put("/api/v1/access-levels/" + sampleUuid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -172,7 +179,8 @@ class AccessLevelControllerTest {
 
     @Test
     void update_shouldReturn404WhenNotFound() throws Exception {
-        when(repository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(repository.findByUuid(missing)).thenReturn(Optional.empty());
 
         String json = """
                 {
@@ -180,7 +188,7 @@ class AccessLevelControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/access-levels/999")
+        mockMvc.perform(put("/api/v1/access-levels/" + missing)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -190,8 +198,8 @@ class AccessLevelControllerTest {
     @Test
     void update_shouldReturn403ForSystemDefault() throws Exception {
         AccessLevelEntity systemDefault = AccessLevelEntity.builder()
-                .id(2L).schoolId(1L).name("System").systemDefault(true).active(true).build();
-        when(repository.findById(2L)).thenReturn(Optional.of(systemDefault));
+                .id(2L).uuid(systemUuid).schoolId(1L).name("System").systemDefault(true).active(true).build();
+        when(repository.findByUuid(systemUuid)).thenReturn(Optional.of(systemDefault));
 
         String json = """
                 {
@@ -199,7 +207,7 @@ class AccessLevelControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/access-levels/2")
+        mockMvc.perform(put("/api/v1/access-levels/" + systemUuid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -208,12 +216,12 @@ class AccessLevelControllerTest {
 
     @Test
     void toggleStatus_shouldReturn200() throws Exception {
-        when(repository.findById(1L)).thenReturn(Optional.of(sampleEntity));
+        when(repository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleEntity));
         when(repository.save(any(AccessLevelEntity.class))).thenReturn(sampleEntity);
 
         String json = objectMapper.writeValueAsString(Map.of("active", false));
 
-        mockMvc.perform(patch("/api/v1/access-levels/1/status")
+        mockMvc.perform(patch("/api/v1/access-levels/" + sampleUuid + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -222,11 +230,12 @@ class AccessLevelControllerTest {
 
     @Test
     void toggleStatus_shouldReturn404WhenNotFound() throws Exception {
-        when(repository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(repository.findByUuid(missing)).thenReturn(Optional.empty());
 
         String json = objectMapper.writeValueAsString(Map.of("active", false));
 
-        mockMvc.perform(patch("/api/v1/access-levels/999/status")
+        mockMvc.perform(patch("/api/v1/access-levels/" + missing + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -235,18 +244,19 @@ class AccessLevelControllerTest {
 
     @Test
     void delete_shouldReturn204() throws Exception {
-        when(repository.findById(1L)).thenReturn(Optional.of(sampleEntity));
+        when(repository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleEntity));
 
-        mockMvc.perform(delete("/api/v1/access-levels/1")
+        mockMvc.perform(delete("/api/v1/access-levels/" + sampleUuid)
                         .with(authenticated(adminUser)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void delete_shouldReturn404WhenNotFound() throws Exception {
-        when(repository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(repository.findByUuid(missing)).thenReturn(Optional.empty());
 
-        mockMvc.perform(delete("/api/v1/access-levels/999")
+        mockMvc.perform(delete("/api/v1/access-levels/" + missing)
                         .with(authenticated(adminUser)))
                 .andExpect(status().isNotFound());
     }
@@ -254,10 +264,10 @@ class AccessLevelControllerTest {
     @Test
     void delete_shouldReturn403ForSystemDefault() throws Exception {
         AccessLevelEntity systemDefault = AccessLevelEntity.builder()
-                .id(2L).schoolId(1L).name("System").systemDefault(true).active(true).build();
-        when(repository.findById(2L)).thenReturn(Optional.of(systemDefault));
+                .id(2L).uuid(systemUuid).schoolId(1L).name("System").systemDefault(true).active(true).build();
+        when(repository.findByUuid(systemUuid)).thenReturn(Optional.of(systemDefault));
 
-        mockMvc.perform(delete("/api/v1/access-levels/2")
+        mockMvc.perform(delete("/api/v1/access-levels/" + systemUuid)
                         .with(authenticated(adminUser)))
                 .andExpect(status().isForbidden());
     }

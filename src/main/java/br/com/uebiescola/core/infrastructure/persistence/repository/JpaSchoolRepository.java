@@ -10,9 +10,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
+import java.util.UUID;
 
 public interface JpaSchoolRepository extends JpaRepository<SchoolEntity, Long> {
     Optional<SchoolEntity> findBySubdomain(String subdomain);
+
+    Optional<SchoolEntity> findByUuid(UUID uuid);
 
     boolean existsByCnpj(String cnpj);
 

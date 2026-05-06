@@ -73,6 +73,7 @@ class SchoolControllerTest {
     private AuthenticatedUser ceoUser;
     private AuthenticatedUser adminUser;
     private School sampleSchool;
+    private UUID sampleUuid;
 
     private static RequestPostProcessor authenticated(AuthenticatedUser user) {
         return request -> {
@@ -89,8 +90,10 @@ class SchoolControllerTest {
         ceoUser = new AuthenticatedUser("ceo@uebi.com", "ROLE_CEO", null, "ext-ceo");
         adminUser = new AuthenticatedUser("admin@escola.com", "ROLE_ADMIN", 1L, "ext-admin");
 
+        sampleUuid = UUID.randomUUID();
         sampleSchool = School.builder()
                 .id(1L)
+                .uuid(sampleUuid)
                 .externalId(UUID.randomUUID())
                 .name("Escola Teste")
                 .legalName("Escola Teste LTDA")
@@ -148,10 +151,10 @@ class SchoolControllerTest {
 
     @Test
     void getById_shouldReturn200WhenCeo() throws Exception {
-        when(schoolRepository.findById(1L)).thenReturn(Optional.of(sampleSchool));
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
         when(userRepository.findFirstBySchoolIdAndRole(1L, UserRole.ROLE_ADMIN)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/v1/schools/1")
+        mockMvc.perform(get("/api/v1/schools/" + sampleUuid)
                         .with(authenticated(ceoUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -160,20 +163,22 @@ class SchoolControllerTest {
 
     @Test
     void getById_shouldReturn404WhenNotFound() throws Exception {
-        when(schoolRepository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(schoolRepository.findByUuid(missing)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/v1/schools/999")
+        mockMvc.perform(get("/api/v1/schools/" + missing)
                         .with(authenticated(ceoUser)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void toggleStatus_shouldReturn204() throws Exception {
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
         doNothing().when(schoolRepository).updateStatus(1L, true);
 
         String json = objectMapper.writeValueAsString(Map.of("status", "ACTIVE"));
 
-        mockMvc.perform(patch("/api/v1/schools/1/status")
+        mockMvc.perform(patch("/api/v1/schools/" + sampleUuid + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isNoContent());
@@ -233,6 +238,7 @@ class SchoolControllerTest {
 
     @Test
     void update_shouldReturn200() throws Exception {
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
         when(schoolRepository.findById(1L)).thenReturn(Optional.of(sampleSchool));
         when(schoolRepository.saveWithAdminPassword(any(School.class), isNull())).thenReturn(sampleSchool);
 
@@ -244,7 +250,7 @@ class SchoolControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/schools/1")
+        mockMvc.perform(put("/api/v1/schools/" + sampleUuid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(ceoUser)))
@@ -253,7 +259,8 @@ class SchoolControllerTest {
 
     @Test
     void update_shouldReturn404WhenNotFound() throws Exception {
-        when(schoolRepository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(schoolRepository.findByUuid(missing)).thenReturn(Optional.empty());
 
         String json = """
                 {
@@ -263,7 +270,7 @@ class SchoolControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/schools/999")
+        mockMvc.perform(put("/api/v1/schools/" + missing)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(ceoUser)))
@@ -274,13 +281,13 @@ class SchoolControllerTest {
 
     @Test
     void uploadLogo_shouldReturn200WhenCeo() throws Exception {
-        when(schoolRepository.findById(1L)).thenReturn(Optional.of(sampleSchool));
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
         when(schoolRepository.save(any(School.class))).thenReturn(sampleSchool);
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "logo.png", "image/png", new byte[]{1, 2, 3, 4});
 
-        mockMvc.perform(multipart("/api/v1/schools/1/logo-upload")
+        mockMvc.perform(multipart("/api/v1/schools/" + sampleUuid + "/logo-upload")
                         .file(file)
                         .with(request -> { request.setMethod("PATCH"); return request; })
                         .with(authenticated(ceoUser)))
@@ -291,13 +298,13 @@ class SchoolControllerTest {
 
     @Test
     void uploadLogo_shouldReturn200WhenAdminOwnSchool() throws Exception {
-        when(schoolRepository.findById(1L)).thenReturn(Optional.of(sampleSchool));
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
         when(schoolRepository.save(any(School.class))).thenReturn(sampleSchool);
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "logo.jpg", "image/jpeg", new byte[]{10, 20, 30});
 
-        mockMvc.perform(multipart("/api/v1/schools/1/logo-upload")
+        mockMvc.perform(multipart("/api/v1/schools/" + sampleUuid + "/logo-upload")
                         .file(file)
                         .with(request -> { request.setMethod("PATCH"); return request; })
                         .with(authenticated(adminUser)))
@@ -306,12 +313,13 @@ class SchoolControllerTest {
 
     @Test
     void uploadLogo_shouldReturn404WhenSchoolNotFound() throws Exception {
-        when(schoolRepository.findById(999L)).thenReturn(Optional.empty());
+        UUID missing = UUID.randomUUID();
+        when(schoolRepository.findByUuid(missing)).thenReturn(Optional.empty());
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "logo.png", "image/png", new byte[]{1, 2, 3});
 
-        mockMvc.perform(multipart("/api/v1/schools/999/logo-upload")
+        mockMvc.perform(multipart("/api/v1/schools/" + missing + "/logo-upload")
                         .file(file)
                         .with(request -> { request.setMethod("PATCH"); return request; })
                         .with(authenticated(ceoUser)))
@@ -321,11 +329,12 @@ class SchoolControllerTest {
     @Test
     void uploadLogo_shouldReturn403WhenAdminDifferentSchool() throws Exception {
         AuthenticatedUser otherAdmin = new AuthenticatedUser("admin@outra.com", "ROLE_ADMIN", 2L, "ext-other");
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "logo.png", "image/png", new byte[]{1, 2, 3});
 
-        mockMvc.perform(multipart("/api/v1/schools/1/logo-upload")
+        mockMvc.perform(multipart("/api/v1/schools/" + sampleUuid + "/logo-upload")
                         .file(file)
                         .with(request -> { request.setMethod("PATCH"); return request; })
                         .with(authenticated(otherAdmin)))
@@ -337,8 +346,9 @@ class SchoolControllerTest {
     @Test
     void getById_shouldReturn403WhenAdminDifferentSchool() throws Exception {
         AuthenticatedUser otherAdmin = new AuthenticatedUser("admin@outra.com", "ROLE_ADMIN", 2L, "ext-other");
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
 
-        mockMvc.perform(get("/api/v1/schools/1")
+        mockMvc.perform(get("/api/v1/schools/" + sampleUuid)
                         .with(authenticated(otherAdmin)))
                 .andExpect(status().isForbidden());
     }
@@ -348,6 +358,7 @@ class SchoolControllerTest {
     @Test
     void update_shouldReturn403WhenAdminDifferentSchool() throws Exception {
         AuthenticatedUser otherAdmin = new AuthenticatedUser("admin@outra.com", "ROLE_ADMIN", 2L, "ext-other");
+        when(schoolRepository.findByUuid(sampleUuid)).thenReturn(Optional.of(sampleSchool));
 
         String json = """
                 {
@@ -357,7 +368,7 @@ class SchoolControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/schools/1")
+        mockMvc.perform(put("/api/v1/schools/" + sampleUuid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(otherAdmin)))

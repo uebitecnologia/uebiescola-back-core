@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,8 @@ class SettingsControllerTest {
 
     private AuthenticatedUser adminUser;
     private SchoolSettingsEntity sampleSettings;
+    private UUID schoolUuid;
+    private SchoolEntity schoolEntity;
 
     private static RequestPostProcessor authenticated(AuthenticatedUser user) {
         return request -> {
@@ -77,6 +80,9 @@ class SettingsControllerTest {
     void setUp() {
         adminUser = new AuthenticatedUser("admin@escola.com", "ROLE_ADMIN", 1L, "ext-admin");
 
+        schoolUuid = UUID.randomUUID();
+        schoolEntity = SchoolEntity.builder().id(1L).uuid(schoolUuid).name("Escola").build();
+
         sampleSettings = SchoolSettingsEntity.builder()
                 .schoolId(1L)
                 .twoFactorEnabled(false)
@@ -86,6 +92,8 @@ class SettingsControllerTest {
                 .backupSchedule("DAILY_04")
                 .apiKey("uebi_live_abc123def456")
                 .build();
+
+        when(schoolRepository.findByUuid(schoolUuid)).thenReturn(Optional.of(schoolEntity));
     }
 
     @AfterEach
@@ -97,7 +105,7 @@ class SettingsControllerTest {
     void getSettings_shouldReturn200() throws Exception {
         when(settingsRepository.findById(1L)).thenReturn(Optional.of(sampleSettings));
 
-        mockMvc.perform(get("/api/v1/schools/1/settings")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings")
                         .with(authenticated(adminUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.twoFactorEnabled").value(false))
@@ -119,7 +127,7 @@ class SettingsControllerTest {
                 .build();
         when(settingsRepository.save(any(SchoolSettingsEntity.class))).thenReturn(defaultSettings);
 
-        mockMvc.perform(get("/api/v1/schools/1/settings")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings")
                         .with(authenticated(adminUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.twoFactorEnabled").value(false));
@@ -139,7 +147,7 @@ class SettingsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/schools/1/settings")
+        mockMvc.perform(put("/api/v1/schools/" + schoolUuid + "/settings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -152,7 +160,7 @@ class SettingsControllerTest {
         when(settingsRepository.save(any(SchoolSettingsEntity.class))).thenReturn(sampleSettings);
         when(auditLogRepository.save(any(AuditLogEntity.class))).thenReturn(null);
 
-        mockMvc.perform(post("/api/v1/schools/1/settings/generate-api-key")
+        mockMvc.perform(post("/api/v1/schools/" + schoolUuid + "/settings/generate-api-key")
                         .with(authenticated(adminUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.apiKey").isNotEmpty());
@@ -168,7 +176,7 @@ class SettingsControllerTest {
         when(auditLogRepository.findBySchoolIdOrderByCreatedAtDesc(eq(1L), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of(log)));
 
-        mockMvc.perform(get("/api/v1/schools/1/settings/audit-logs")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings/audit-logs")
                         .with(authenticated(adminUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -181,7 +189,7 @@ class SettingsControllerTest {
         when(auditLogRepository.findBySchoolIdOrderByCreatedAtDesc(eq(1L), eq(PageRequest.of(1, 10))))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        mockMvc.perform(get("/api/v1/schools/1/settings/audit-logs")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings/audit-logs")
                         .param("page", "1")
                         .param("size", "10")
                         .with(authenticated(adminUser)))
@@ -200,7 +208,7 @@ class SettingsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/schools/1/settings/audit-logs")
+        mockMvc.perform(post("/api/v1/schools/" + schoolUuid + "/settings/audit-logs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(adminUser)))
@@ -213,7 +221,7 @@ class SettingsControllerTest {
     void getSettings_shouldReturn403WhenAdminDifferentSchool() throws Exception {
         AuthenticatedUser otherAdmin = new AuthenticatedUser("admin@outra.com", "ROLE_ADMIN", 2L, "ext-other");
 
-        mockMvc.perform(get("/api/v1/schools/1/settings")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings")
                         .with(authenticated(otherAdmin)))
                 .andExpect(status().isForbidden());
     }
@@ -228,7 +236,7 @@ class SettingsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/schools/1/settings")
+        mockMvc.perform(put("/api/v1/schools/" + schoolUuid + "/settings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(otherAdmin)))
@@ -239,7 +247,7 @@ class SettingsControllerTest {
     void generateApiKey_shouldReturn403WhenAdminDifferentSchool() throws Exception {
         AuthenticatedUser otherAdmin = new AuthenticatedUser("admin@outra.com", "ROLE_ADMIN", 2L, "ext-other");
 
-        mockMvc.perform(post("/api/v1/schools/1/settings/generate-api-key")
+        mockMvc.perform(post("/api/v1/schools/" + schoolUuid + "/settings/generate-api-key")
                         .with(authenticated(otherAdmin)))
                 .andExpect(status().isForbidden());
     }
@@ -248,7 +256,7 @@ class SettingsControllerTest {
     void getAuditLogs_shouldReturn403WhenAdminDifferentSchool() throws Exception {
         AuthenticatedUser otherAdmin = new AuthenticatedUser("admin@outra.com", "ROLE_ADMIN", 2L, "ext-other");
 
-        mockMvc.perform(get("/api/v1/schools/1/settings/audit-logs")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings/audit-logs")
                         .with(authenticated(otherAdmin)))
                 .andExpect(status().isForbidden());
     }
@@ -264,7 +272,7 @@ class SettingsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/schools/1/settings/audit-logs")
+        mockMvc.perform(post("/api/v1/schools/" + schoolUuid + "/settings/audit-logs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .with(authenticated(otherAdmin)))
@@ -275,7 +283,7 @@ class SettingsControllerTest {
 
     @Test
     void updateSettings_shouldReturn400WhenBodyIsEmpty() throws Exception {
-        mockMvc.perform(put("/api/v1/schools/1/settings")
+        mockMvc.perform(put("/api/v1/schools/" + schoolUuid + "/settings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("")
                         .with(authenticated(adminUser)))
@@ -284,7 +292,7 @@ class SettingsControllerTest {
 
     @Test
     void updateSettings_shouldReturn400WhenBodyIsInvalidJson() throws Exception {
-        mockMvc.perform(put("/api/v1/schools/1/settings")
+        mockMvc.perform(put("/api/v1/schools/" + schoolUuid + "/settings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("not json")
                         .with(authenticated(adminUser)))
@@ -298,7 +306,7 @@ class SettingsControllerTest {
         AuthenticatedUser ceoUser = new AuthenticatedUser("ceo@uebi.com", "ROLE_CEO", null, "ext-ceo");
         when(settingsRepository.findById(1L)).thenReturn(Optional.of(sampleSettings));
 
-        mockMvc.perform(get("/api/v1/schools/1/settings")
+        mockMvc.perform(get("/api/v1/schools/" + schoolUuid + "/settings")
                         .with(authenticated(ceoUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.backupSchedule").value("DAILY_04"));

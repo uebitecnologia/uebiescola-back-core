@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "terms_versions")
@@ -19,6 +20,9 @@ public class TermsVersionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
+    private UUID uuid;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -43,4 +47,9 @@ public class TermsVersionEntity {
 
     @Column(name = "created_by")
     private String createdBy;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.uuid == null) this.uuid = UUID.randomUUID();
+    }
 }

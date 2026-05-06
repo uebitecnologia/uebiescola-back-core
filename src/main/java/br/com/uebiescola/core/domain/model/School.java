@@ -7,6 +7,7 @@ import java.util.UUID;
 @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
 public class School {
     private Long id;
+    private UUID uuid;
     private UUID externalId;
     private String name;
     private String legalName;

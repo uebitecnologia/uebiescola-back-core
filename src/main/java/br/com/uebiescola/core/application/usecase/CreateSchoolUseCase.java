@@ -31,6 +31,9 @@ public class CreateSchoolUseCase {
         if (school.getExternalId() == null) {
             school.setExternalId(UUID.randomUUID());
         }
+        if (school.getUuid() == null) {
+            school.setUuid(UUID.randomUUID());
+        }
 
         // 1. Prepara o Admin no domínio
         User adminUser = User.builder()

@@ -2,7 +2,7 @@
 FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
 COPY . .
-RUN chmod +x mvnw && ./mvnw package -DskipTests -q
+RUN chmod +x mvnw && ./mvnw package -Dmaven.test.skip=true -q
 
 FROM eclipse-temurin:17-jre-alpine
 RUN apk add --no-cache curl

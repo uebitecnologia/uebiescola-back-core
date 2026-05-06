@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -57,5 +58,20 @@ public class ManageTermsVersionUseCase {
 
     public Optional<TermsVersion> getLatestActive(TermsType type) {
         return termsVersionRepository.findFirstByTypeAndActiveTrue(type);
+    }
+
+    private Long resolveId(UUID uuid) {
+        return termsVersionRepository.findByUuid(uuid)
+                .map(TermsVersion::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("Versão de termos não encontrada: " + uuid));
+    }
+
+    public TermsVersion updateByUuid(UUID uuid, TermsVersion updated) {
+        return update(resolveId(uuid), updated);
+    }
+
+    @Transactional
+    public TermsVersion activateByUuid(UUID uuid) {
+        return activate(resolveId(uuid));
     }
 }

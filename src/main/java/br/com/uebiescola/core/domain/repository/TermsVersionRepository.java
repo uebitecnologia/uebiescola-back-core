@@ -5,10 +5,12 @@ import br.com.uebiescola.core.domain.model.enums.TermsType;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface TermsVersionRepository {
     TermsVersion save(TermsVersion termsVersion);
     Optional<TermsVersion> findById(Long id);
+    Optional<TermsVersion> findByUuid(UUID uuid);
     List<TermsVersion> findAll();
     Optional<TermsVersion> findFirstByTypeAndActiveTrue(TermsType type);
     List<TermsVersion> findByTypeAndActiveTrue(TermsType type);

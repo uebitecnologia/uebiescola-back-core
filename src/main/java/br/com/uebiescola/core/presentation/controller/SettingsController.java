@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/schools/{schoolId}/settings")
+@RequestMapping("/api/v1/schools/{schoolUuid}/settings")
 @RequiredArgsConstructor
 public class SettingsController {
 
@@ -29,14 +29,35 @@ public class SettingsController {
     private final JpaAuditLogRepository auditLogRepository;
     private final JpaSchoolRepository schoolRepository;
 
+    private Long resolveSchoolId(String idOrUuid) {
+        if (idOrUuid == null || idOrUuid.isBlank()) return null;
+        // Try UUID first
+        try {
+            UUID uuid = UUID.fromString(idOrUuid);
+            return schoolRepository.findByUuid(uuid)
+                    .map(s -> s.getId())
+                    .orElse(null);
+        } catch (IllegalArgumentException ignored) {
+            // fallback: numeric Long
+        }
+        try {
+            Long id = Long.parseLong(idOrUuid);
+            return schoolRepository.findById(id).map(s -> s.getId()).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     // ===================== SETTINGS =====================
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<SchoolSettingsDTO> getSettings(
-            @PathVariable Long schoolId,
+            @PathVariable("schoolUuid") String schoolIdOrUuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
+        if (schoolId == null) return ResponseEntity.notFound().build();
         if (!hasAccess(user, schoolId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         SchoolSettingsEntity settings = settingsRepository.findById(schoolId)
@@ -49,10 +70,12 @@ public class SettingsController {
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<SchoolSettingsDTO> updateSettings(
-            @PathVariable Long schoolId,
+            @PathVariable("schoolUuid") String schoolIdOrUuid,
             @RequestBody SchoolSettingsDTO dto,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
+        if (schoolId == null) return ResponseEntity.notFound().build();
         if (!hasAccess(user, schoolId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         SchoolSettingsEntity settings = settingsRepository.findById(schoolId)
@@ -112,9 +135,11 @@ public class SettingsController {
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<SchoolSettingsDTO> generateApiKey(
-            @PathVariable Long schoolId,
+            @PathVariable("schoolUuid") String schoolIdOrUuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
+        if (schoolId == null) return ResponseEntity.notFound().build();
         if (!hasAccess(user, schoolId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         SchoolSettingsEntity settings = settingsRepository.findById(schoolId)
@@ -134,11 +159,13 @@ public class SettingsController {
     @GetMapping("/audit-logs")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<List<AuditLogDTO>> getAuditLogs(
-            @PathVariable Long schoolId,
+            @PathVariable("schoolUuid") String schoolIdOrUuid,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
+        if (schoolId == null) return ResponseEntity.notFound().build();
         if (!hasAccess(user, schoolId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         var logs = auditLogRepository.findBySchoolIdOrderByCreatedAtDesc(schoolId, PageRequest.of(page, size));
@@ -153,10 +180,12 @@ public class SettingsController {
     @PostMapping("/audit-logs")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<Void> createAuditLog(
-            @PathVariable Long schoolId,
+            @PathVariable("schoolUuid") String schoolIdOrUuid,
             @RequestBody AuditLogDTO dto,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
+        if (schoolId == null) return ResponseEntity.notFound().build();
         if (!hasAccess(user, schoolId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         logAction(schoolId, user.getEmail(), dto.action(), dto.details());

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/access-levels")
@@ -54,13 +56,13 @@ public class AccessLevelController {
         return ResponseEntity.ok(levels);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<AccessLevelDTO> getById(
-            @PathVariable Long id,
+            @PathVariable("uuid") String idOrUuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return repository.findById(id)
+        return resolveAccessLevel(idOrUuid)
                 .filter(e -> hasAccess(user, e.getSchoolId()))
                 .map(e -> ResponseEntity.ok(toDTO(e)))
                 .orElse(ResponseEntity.notFound().build());
@@ -89,15 +91,15 @@ public class AccessLevelController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(saved));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<?> update(
-            @PathVariable Long id,
+            @PathVariable("uuid") String idOrUuid,
             @RequestBody AccessLevelDTO dto,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return repository.findById(id)
+        return resolveAccessLevel(idOrUuid)
                 .filter(e -> hasAccess(user, e.getSchoolId()))
                 .map(entity -> {
                     if (entity.getSystemDefault()) {
@@ -114,15 +116,15 @@ public class AccessLevelController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/{uuid}/status")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<AccessLevelDTO> toggleStatus(
-            @PathVariable Long id,
+            @PathVariable("uuid") String idOrUuid,
             @RequestBody Map<String, Boolean> body,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return repository.findById(id)
+        return resolveAccessLevel(idOrUuid)
                 .filter(e -> hasAccess(user, e.getSchoolId()))
                 .map(entity -> {
                     entity.setActive(body.getOrDefault("active", !entity.getActive()));
@@ -132,14 +134,14 @@ public class AccessLevelController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<Void> delete(
-            @PathVariable Long id,
+            @PathVariable("uuid") String idOrUuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
-        return repository.findById(id)
+        return resolveAccessLevel(idOrUuid)
                 .filter(e -> hasAccess(user, e.getSchoolId()))
                 .map(entity -> {
                     if (entity.getSystemDefault()) {
@@ -152,6 +154,22 @@ public class AccessLevelController {
     }
 
     // ===================== HELPERS =====================
+
+    private Optional<AccessLevelEntity> resolveAccessLevel(String idOrUuid) {
+        if (idOrUuid == null || idOrUuid.isBlank()) return Optional.empty();
+        // Try UUID first
+        try {
+            UUID uuid = UUID.fromString(idOrUuid);
+            return repository.findByUuid(uuid);
+        } catch (IllegalArgumentException ignored) {
+            // fallback: numeric Long
+        }
+        try {
+            return repository.findById(Long.parseLong(idOrUuid));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
 
     private Long resolveSchoolId(AuthenticatedUser user, Long requestSchoolId) {
         if (user.getRole().contains("CEO")) {
@@ -168,6 +186,7 @@ public class AccessLevelController {
     private AccessLevelDTO toDTO(AccessLevelEntity entity) {
         return new AccessLevelDTO(
                 entity.getId(),
+                entity.getUuid(),
                 entity.getSchoolId(),
                 entity.getName(),
                 entity.getDescription(),

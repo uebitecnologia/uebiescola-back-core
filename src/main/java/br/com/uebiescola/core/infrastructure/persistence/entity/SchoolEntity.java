@@ -27,6 +27,9 @@ public class SchoolEntity {
     @Builder.Default
     private UUID externalId = UUID.randomUUID();
 
+    @Column(nullable = false, unique = true)
+    private UUID uuid;
+
     @Column(nullable = false)
     private String name;
 
@@ -108,5 +111,11 @@ public class SchoolEntity {
         if (adminUser != null && this.getId() != null) {
             adminUser.setSchoolId(this.getId());
         }
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.uuid == null) this.uuid = UUID.randomUUID();
+        if (this.externalId == null) this.externalId = UUID.randomUUID();
     }
 }

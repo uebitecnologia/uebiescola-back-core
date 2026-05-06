@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -59,6 +60,15 @@ public class JpaSchoolRepositoryAdapter implements SchoolRepository {
     public Optional<School> findById(Long id) {
         return jpaRepository.findById(id).map(entity -> {
             initializeLazyFields(entity); // Carrega os dados Lazy
+            return SchoolPersistenceMapper.toDomain(entity);
+        });
+    }
+
+    @Override
+    @Transactional
+    public Optional<School> findByUuid(UUID uuid) {
+        return jpaRepository.findByUuid(uuid).map(entity -> {
+            initializeLazyFields(entity);
             return SchoolPersistenceMapper.toDomain(entity);
         });
     }

@@ -3,9 +3,11 @@ package br.com.uebiescola.core.presentation.controller;
 import br.com.uebiescola.core.application.usecase.AcceptTermsUseCase;
 import br.com.uebiescola.core.application.usecase.CheckTermsStatusUseCase;
 import br.com.uebiescola.core.application.usecase.ManageTermsVersionUseCase;
+import br.com.uebiescola.core.domain.exception.ResourceNotFoundException;
 import br.com.uebiescola.core.domain.model.TermsAcceptance;
 import br.com.uebiescola.core.domain.model.TermsVersion;
 import br.com.uebiescola.core.domain.model.enums.TermsType;
+import br.com.uebiescola.core.domain.repository.TermsVersionRepository;
 import br.com.uebiescola.core.infrastructure.persistence.entity.UserEntity;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -32,6 +35,27 @@ public class TermsController {
     private final AcceptTermsUseCase acceptTermsUseCase;
     private final CheckTermsStatusUseCase checkTermsStatusUseCase;
     private final JpaUserRepository userRepository;
+    private final TermsVersionRepository termsVersionRepository;
+
+    private Long resolveTermsVersionId(String idOrUuid) {
+        if (idOrUuid == null || idOrUuid.isBlank()) {
+            throw new ResourceNotFoundException("Identificador ausente");
+        }
+        // Try UUID first
+        try {
+            UUID uuid = UUID.fromString(idOrUuid);
+            return termsVersionRepository.findByUuid(uuid)
+                    .map(TermsVersion::getId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Versão de termos não encontrada: " + uuid));
+        } catch (IllegalArgumentException ignored) {
+            // fallback: numeric Long
+        }
+        try {
+            return Long.parseLong(idOrUuid);
+        } catch (NumberFormatException e) {
+            throw new ResourceNotFoundException("Identificador inválido: " + idOrUuid);
+        }
+    }
 
     // ===================== PUBLIC ENDPOINTS =====================
 
@@ -121,10 +145,10 @@ public class TermsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/terms/versions/{id}")
+    @PutMapping("/terms/versions/{uuid}")
     @PreAuthorize("hasRole('CEO')")
     public ResponseEntity<TermsVersion> updateVersion(
-            @PathVariable Long id,
+            @PathVariable("uuid") String idOrUuid,
             @RequestBody TermsVersionDTO dto) {
 
         TermsVersion updated = TermsVersion.builder()
@@ -134,13 +158,15 @@ public class TermsController {
                 .version(dto.version())
                 .build();
 
+        Long id = resolveTermsVersionId(idOrUuid);
         TermsVersion result = manageTermsVersionUseCase.update(id, updated);
         return ResponseEntity.ok(result);
     }
 
-    @PatchMapping("/terms/versions/{id}/activate")
+    @PatchMapping("/terms/versions/{uuid}/activate")
     @PreAuthorize("hasRole('CEO')")
-    public ResponseEntity<TermsVersion> activateVersion(@PathVariable Long id) {
+    public ResponseEntity<TermsVersion> activateVersion(@PathVariable("uuid") String idOrUuid) {
+        Long id = resolveTermsVersionId(idOrUuid);
         TermsVersion activated = manageTermsVersionUseCase.activate(id);
         return ResponseEntity.ok(activated);
     }

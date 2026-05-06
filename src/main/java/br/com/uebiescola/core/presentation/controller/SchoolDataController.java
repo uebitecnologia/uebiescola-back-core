@@ -2,6 +2,8 @@ package br.com.uebiescola.core.presentation.controller;
 
 import br.com.uebiescola.core.application.service.SchoolDataExportService;
 import br.com.uebiescola.core.application.service.SchoolDataImportService;
+import br.com.uebiescola.core.domain.exception.ResourceNotFoundException;
+import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -16,22 +18,48 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/schools/{schoolId}/data")
+@RequestMapping("/api/v1/schools/{schoolUuid}/data")
 @RequiredArgsConstructor
 @Slf4j
 public class SchoolDataController {
 
     private final SchoolDataExportService exportService;
     private final SchoolDataImportService importService;
+    private final SchoolRepository schoolRepository;
 
     private static final String EXCEL_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
+    private Long resolveSchoolId(String idOrUuid) {
+        if (idOrUuid == null || idOrUuid.isBlank()) {
+            throw new ResourceNotFoundException("Identificador ausente");
+        }
+        // Try UUID first
+        try {
+            UUID uuid = UUID.fromString(idOrUuid);
+            return schoolRepository.findByUuid(uuid)
+                    .map(s -> s.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada"));
+        } catch (IllegalArgumentException ignored) {
+            // fallback: numeric Long
+        }
+        try {
+            Long id = Long.parseLong(idOrUuid);
+            return schoolRepository.findById(id)
+                    .map(s -> s.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada"));
+        } catch (NumberFormatException e) {
+            throw new ResourceNotFoundException("Identificador inválido: " + idOrUuid);
+        }
+    }
+
     @GetMapping("/export")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
-    public ResponseEntity<byte[]> exportSchoolData(@PathVariable Long schoolId,
+    public ResponseEntity<byte[]> exportSchoolData(@PathVariable("schoolUuid") String schoolIdOrUuid,
                                                    @RequestHeader("Authorization") String authToken) {
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
         try {
             byte[] excelBytes = exportService.exportSchoolData(schoolId, authToken);
 
@@ -54,9 +82,10 @@ public class SchoolDataController {
 
     @PostMapping("/import")
     @PreAuthorize("hasRole('CEO')")
-    public ResponseEntity<?> importSchoolData(@PathVariable Long schoolId,
+    public ResponseEntity<?> importSchoolData(@PathVariable("schoolUuid") String schoolIdOrUuid,
                                               @RequestParam("file") MultipartFile file,
                                               @RequestHeader("Authorization") String authToken) {
+        Long schoolId = resolveSchoolId(schoolIdOrUuid);
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Arquivo vazio"));
         }

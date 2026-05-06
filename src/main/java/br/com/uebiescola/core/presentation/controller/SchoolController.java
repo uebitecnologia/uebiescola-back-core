@@ -46,6 +46,41 @@ public class SchoolController {
 
     private final PasswordEncoder passwordEncoder;
 
+    private Long resolveId(String idOrUuid) {
+        if (idOrUuid == null || idOrUuid.isBlank()) {
+            throw new ResourceNotFoundException("Identificador ausente");
+        }
+        // Try UUID first
+        try {
+            UUID uuid = UUID.fromString(idOrUuid);
+            return schoolRepository.findByUuid(uuid)
+                    .map(School::getId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada"));
+        } catch (IllegalArgumentException ignored) {
+            // fallback: numeric Long
+        }
+        try {
+            return Long.parseLong(idOrUuid);
+        } catch (NumberFormatException e) {
+            throw new ResourceNotFoundException("Identificador inválido: " + idOrUuid);
+        }
+    }
+
+    private Optional<School> resolveSchool(String idOrUuid) {
+        if (idOrUuid == null || idOrUuid.isBlank()) return Optional.empty();
+        try {
+            UUID uuid = UUID.fromString(idOrUuid);
+            return schoolRepository.findByUuid(uuid);
+        } catch (IllegalArgumentException ignored) {
+            // fallback: numeric Long
+        }
+        try {
+            return schoolRepository.findById(Long.parseLong(idOrUuid));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('CEO')")
     @Transactional
@@ -124,33 +159,37 @@ public class SchoolController {
         return ResponseEntity.ok(schools);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN', 'GUARDIAN', 'TEACHER')")
     @Transactional
-    public ResponseEntity<School> getById(@PathVariable Long id, @AuthenticationPrincipal AuthenticatedUser user) {
+    public ResponseEntity<School> getById(@PathVariable("uuid") String idOrUuid, @AuthenticationPrincipal AuthenticatedUser user) {
+        Optional<School> opt = resolveSchool(idOrUuid);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+        Long id = opt.get().getId();
 
         if (!user.getRole().contains("CEO") && !user.getSchoolId().equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        return schoolRepository.findById(id)
-                .map(school -> {
-                    if(school.getAddress() != null) school.getAddress().getStreet();
-                    if(school.getContract() != null) school.getContract().getPlanBase();
+        School school = opt.get();
+        if(school.getAddress() != null) school.getAddress().getStreet();
+        if(school.getContract() != null) school.getContract().getPlanBase();
 
-                    findAdminUserForSchool(id).ifPresent(school::setAdminUser);
+        findAdminUserForSchool(id).ifPresent(school::setAdminUser);
 
-                    return ResponseEntity.ok(school);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(school);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
-    public ResponseEntity<School> update(@PathVariable Long id,
+    public ResponseEntity<School> update(@PathVariable("uuid") String idOrUuid,
                                          @RequestBody @Valid SchoolRequest request,
                                          @AuthenticationPrincipal AuthenticatedUser user) {
+
+        Optional<School> existingOpt = resolveSchool(idOrUuid);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Long id = existingOpt.get().getId();
 
         if (!user.getRole().contains("CEO") && !user.getSchoolId().equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -235,18 +274,20 @@ public class SchoolController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/{uuid}/status")
     @PreAuthorize("hasRole('CEO')")
     @Transactional
-    public ResponseEntity<Void> toggleStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Void> toggleStatus(@PathVariable("uuid") String idOrUuid, @RequestBody Map<String, String> body) {
+        Long id = resolveId(idOrUuid);
         boolean newStatus = "ACTIVE".equalsIgnoreCase(body.get("status"));
         schoolRepository.updateStatus(id, newStatus);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{uuid}")
     @PreAuthorize("hasRole('CEO')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("uuid") String idOrUuid) {
+        Long id = resolveId(idOrUuid);
         deleteSchoolUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
@@ -297,19 +338,20 @@ public class SchoolController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping(value = "/{id}/logo-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/{uuid}/logo-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
-    public ResponseEntity<Void> uploadLogo(@PathVariable Long id,
+    public ResponseEntity<Void> uploadLogo(@PathVariable("uuid") String idOrUuid,
                                            @RequestParam("file") MultipartFile file,
                                            @AuthenticationPrincipal AuthenticatedUser user) throws IOException {
+
+        School school = resolveSchool(idOrUuid)
+                .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada"));
+        Long id = school.getId();
 
         if (!user.getRole().contains("CEO") && !user.getSchoolId().equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        School school = schoolRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada"));
 
         school.setLogoBytes(file.getBytes());
         school.setLogoContentType(file.getContentType());
