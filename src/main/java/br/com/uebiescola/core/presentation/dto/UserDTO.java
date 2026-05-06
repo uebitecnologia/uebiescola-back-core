@@ -1,7 +1,6 @@
 package br.com.uebiescola.core.presentation.dto;
 
 public record UserDTO(
-        Long id,
         String uuid,
         String name,
         String cpf,

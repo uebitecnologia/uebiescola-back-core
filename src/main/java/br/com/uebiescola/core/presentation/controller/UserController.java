@@ -285,7 +285,6 @@ public class UserController {
                     .orElse(null);
         }
         return new UserDTO(
-                entity.getId(),
                 entity.getExternalId() != null ? entity.getExternalId().toString() : null,
                 entity.getName(),
                 entity.getCpf(),

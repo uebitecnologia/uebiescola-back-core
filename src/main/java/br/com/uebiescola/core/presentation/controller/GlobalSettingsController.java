@@ -45,7 +45,6 @@ public class GlobalSettingsController {
 
     private GlobalSettingDTO toDTO(GlobalSettingEntity entity) {
         return new GlobalSettingDTO(
-                entity.getId(),
                 entity.getKey(),
                 entity.getValue(),
                 entity.getCategory(),

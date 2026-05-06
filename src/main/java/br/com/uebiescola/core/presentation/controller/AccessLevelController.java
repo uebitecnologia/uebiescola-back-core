@@ -185,7 +185,6 @@ public class AccessLevelController {
 
     private AccessLevelDTO toDTO(AccessLevelEntity entity) {
         return new AccessLevelDTO(
-                entity.getId(),
                 entity.getUuid(),
                 entity.getSchoolId(),
                 entity.getName(),

@@ -56,7 +56,6 @@ public class AuditController {
 
         List<AuditLogResponseDTO> result = logs.getContent().stream()
                 .map(log -> new AuditLogResponseDTO(
-                        log.getId(),
                         log.getSchoolId(),
                         schoolNames.getOrDefault(log.getSchoolId(), "Desconhecida"),
                         log.getUserEmail(),

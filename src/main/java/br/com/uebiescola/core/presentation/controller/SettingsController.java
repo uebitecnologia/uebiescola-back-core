@@ -171,7 +171,7 @@ public class SettingsController {
         var logs = auditLogRepository.findBySchoolIdOrderByCreatedAtDesc(schoolId, PageRequest.of(page, size));
 
         List<AuditLogDTO> result = logs.getContent().stream()
-                .map(log -> new AuditLogDTO(log.getId(), log.getUserEmail(), log.getAction(), log.getDetails(), log.getCreatedAt()))
+                .map(log -> new AuditLogDTO(log.getUserEmail(), log.getAction(), log.getDetails(), log.getCreatedAt()))
                 .toList();
 
         return ResponseEntity.ok(result);
