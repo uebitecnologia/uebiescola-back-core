@@ -310,19 +310,22 @@ public class SchoolController {
         return ResponseEntity.ok(result);
     }
 
+    /** Tenant info response — record dedicado pra Feign interno (iam-service) que precisa de id Long.
+     *  Como é record, expõe id explicitamente sem ser afetado pelo @JsonIgnore do domain School. */
+    public record SchoolTenantInfo(Long id, java.util.UUID uuid, String name, String subdomain,
+                                   Boolean active, String primaryColor) {}
+
     @GetMapping("/tenant/{subdomain}")
-    public ResponseEntity<School> getBySubdomain(@PathVariable String subdomain) {
+    public ResponseEntity<SchoolTenantInfo> getBySubdomain(@PathVariable String subdomain) {
         return schoolRepository.findBySubdomain(subdomain)
-                .map(school -> {
-                    School publicInfo = new School();
-                    publicInfo.setId(school.getId());
-                    publicInfo.setUuid(school.getUuid());
-                    publicInfo.setName(school.getName());
-                    publicInfo.setSubdomain(school.getSubdomain());
-                    publicInfo.setActive(school.getActive());
-                    publicInfo.setPrimaryColor(school.getPrimaryColor());
-                    return ResponseEntity.ok(publicInfo);
-                })
+                .map(school -> ResponseEntity.ok(new SchoolTenantInfo(
+                        school.getId(),
+                        school.getUuid(),
+                        school.getName(),
+                        school.getSubdomain(),
+                        school.getActive(),
+                        school.getPrimaryColor()
+                )))
                 .orElse(ResponseEntity.notFound().build());
     }
 
