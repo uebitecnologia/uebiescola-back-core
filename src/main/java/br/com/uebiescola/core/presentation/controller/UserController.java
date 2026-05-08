@@ -8,6 +8,8 @@ import br.com.uebiescola.core.infrastructure.persistence.repository.JpaAccessLev
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
 import br.com.uebiescola.core.presentation.dto.UserDTO;
+import br.com.uebiescola.core.presentation.dto.UserProfileDTO;
+import br.com.uebiescola.core.presentation.dto.UserProfileUpdateRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -275,6 +277,44 @@ public class UserController {
     private boolean hasAccessToUser(AuthenticatedUser auth, UserEntity entity) {
         if (auth.getRole().contains("CEO")) return true;
         return entity.getSchoolId() != null && entity.getSchoolId().equals(auth.getSchoolId());
+    }
+
+    // ===================== MEU PERFIL (usuário autenticado) =====================
+
+    @GetMapping("/me/profile")
+    public ResponseEntity<UserProfileDTO> getMyProfile(@AuthenticationPrincipal AuthenticatedUser user) {
+        UserEntity me = userRepository.findByEmail(user.getEmail()).orElse(null);
+        if (me == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(toProfileDTO(me));
+    }
+
+    @PatchMapping("/me/profile")
+    @Transactional
+    public ResponseEntity<UserProfileDTO> updateMyProfile(
+            @RequestBody UserProfileUpdateRequest req,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        UserEntity me = userRepository.findByEmail(user.getEmail()).orElse(null);
+        if (me == null) return ResponseEntity.notFound().build();
+
+        if (req.name() != null && !req.name().isBlank()) me.setName(req.name().trim());
+        if (req.jobTitle() != null) me.setJobTitle(req.jobTitle().isBlank() ? null : req.jobTitle().trim());
+        if (req.signature() != null) me.setSignature(req.signature().isBlank() ? null : req.signature());
+
+        userRepository.save(me);
+        return ResponseEntity.ok(toProfileDTO(me));
+    }
+
+    private UserProfileDTO toProfileDTO(UserEntity e) {
+        return new UserProfileDTO(
+                e.getExternalId() != null ? e.getExternalId().toString() : null,
+                e.getName(),
+                e.getEmail(),
+                e.getCpf(),
+                e.getRole() != null ? e.getRole().name() : null,
+                e.getSchoolId(),
+                e.getJobTitle(),
+                e.getSignature()
+        );
     }
 
     private UserDTO toDTO(UserEntity entity) {

@@ -75,4 +75,11 @@ public class UserEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // Perfil — usado em assinatura de comunicados/cobranças e no header dos templates.
+    @Column(name = "job_title", length = 120)
+    private String jobTitle;
+
+    @Column(name = "signature", columnDefinition = "TEXT")
+    private String signature;
 }

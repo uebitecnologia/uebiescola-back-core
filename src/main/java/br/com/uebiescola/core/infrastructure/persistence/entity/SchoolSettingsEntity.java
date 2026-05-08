@@ -52,6 +52,17 @@ public class SchoolSettingsEntity {
     @Column(name = "api_key")
     private String apiKey;
 
+    // --- Identidade nas comunicações ---
+    /** Nome exibido como remetente nos e-mails (ex: "Colégio Kerigma").
+     *  Se null/vazio, usa o nome cadastrado da escola. */
+    @Column(name = "sender_name")
+    private String senderName;
+
+    /** E-mail real da escola usado como Reply-To (ex: secretaria@colegiokerigma.com.br).
+     *  O From real continua sendo noreply@uebiescola.com.br pra passar SPF/DKIM. */
+    @Column(name = "sender_email")
+    private String senderEmail;
+
     // ==================== FINANCEIRO ====================
     @Builder.Default
     @Column(name = "default_due_day")

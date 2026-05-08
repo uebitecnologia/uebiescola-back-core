@@ -2,8 +2,10 @@ package br.com.uebiescola.core.presentation.controller;
 
 import br.com.uebiescola.core.domain.model.enums.UserRole;
 import br.com.uebiescola.core.infrastructure.persistence.entity.SchoolEntity;
+import br.com.uebiescola.core.infrastructure.persistence.entity.SchoolSettingsEntity;
 import br.com.uebiescola.core.infrastructure.persistence.entity.UserEntity;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository;
+import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolSettingsRepository;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,7 @@ public class InternalSchoolController {
 
     private final JpaSchoolRepository schoolRepository;
     private final JpaUserRepository userRepository;
+    private final JpaSchoolSettingsRepository settingsRepository;
 
     /**
      * Retorna info do admin principal da escola (ROLE_ADMIN, primeiro encontrado).
@@ -58,6 +61,7 @@ public class InternalSchoolController {
         }
 
         UserEntity admin = userRepository.findFirstBySchoolIdAndRole(school.getId(), UserRole.ROLE_ADMIN).orElse(null);
+        SchoolSettingsEntity settings = settingsRepository.findById(school.getId()).orElse(null);
 
         Map<String, Object> resp = new HashMap<>();
         resp.put("schoolId", school.getId());
@@ -67,6 +71,9 @@ public class InternalSchoolController {
         resp.put("adminEmail", admin != null ? admin.getEmail() : null);
         resp.put("adminName", admin != null ? admin.getName() : null);
         resp.put("adminCpf", admin != null ? admin.getCpf() : null);
+        // Identidade configurada nas comunicações (Reply-To + From-Name)
+        resp.put("senderName", settings != null ? settings.getSenderName() : null);
+        resp.put("senderEmail", settings != null ? settings.getSenderEmail() : null);
         return ResponseEntity.ok(resp);
     }
 }

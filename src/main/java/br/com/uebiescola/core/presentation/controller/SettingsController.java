@@ -87,6 +87,10 @@ public class SettingsController {
         if (dto.notifyExamReminder() != null) settings.setNotifyExamReminder(dto.notifyExamReminder());
         if (dto.backupSchedule() != null) settings.setBackupSchedule(dto.backupSchedule());
 
+        // Identidade nas comunicações (string vazia limpa o campo)
+        if (dto.senderName() != null) settings.setSenderName(dto.senderName().isBlank() ? null : dto.senderName().trim());
+        if (dto.senderEmail() != null) settings.setSenderEmail(dto.senderEmail().isBlank() ? null : dto.senderEmail().trim());
+
         // Financeiro
         if (dto.defaultDueDay() != null) settings.setDefaultDueDay(dto.defaultDueDay());
         if (dto.defaultPaymentMethod() != null) settings.setDefaultPaymentMethod(dto.defaultPaymentMethod());
@@ -227,6 +231,8 @@ public class SettingsController {
                 e.getNotifyExamReminder(),
                 e.getBackupSchedule(),
                 e.getApiKey(),
+                e.getSenderName(),
+                e.getSenderEmail(),
                 e.getDefaultDueDay(),
                 e.getDefaultPaymentMethod(),
                 e.getDunningEmailEnabled(),

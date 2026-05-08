@@ -12,6 +12,10 @@ public record SchoolSettingsDTO(
         String backupSchedule,
         String apiKey,
 
+        // Identidade nas comunicações
+        String senderName,
+        String senderEmail,
+
         // Financeiro
         Integer defaultDueDay,
         String defaultPaymentMethod,
