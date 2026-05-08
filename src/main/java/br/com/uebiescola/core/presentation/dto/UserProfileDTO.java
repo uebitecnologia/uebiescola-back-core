@@ -12,5 +12,6 @@ public record UserProfileDTO(
         String role,
         Long schoolId,
         String jobTitle,
-        String signature
+        String signature,
+        String photoUrl
 ) {}

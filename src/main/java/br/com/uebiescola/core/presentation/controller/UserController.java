@@ -299,6 +299,7 @@ public class UserController {
         if (req.name() != null && !req.name().isBlank()) me.setName(req.name().trim());
         if (req.jobTitle() != null) me.setJobTitle(req.jobTitle().isBlank() ? null : req.jobTitle().trim());
         if (req.signature() != null) me.setSignature(req.signature().isBlank() ? null : req.signature());
+        if (req.photoUrl() != null) me.setPhotoUrl(req.photoUrl().isBlank() ? null : req.photoUrl().trim());
 
         userRepository.save(me);
         return ResponseEntity.ok(toProfileDTO(me));
@@ -313,7 +314,8 @@ public class UserController {
                 e.getRole() != null ? e.getRole().name() : null,
                 e.getSchoolId(),
                 e.getJobTitle(),
-                e.getSignature()
+                e.getSignature(),
+                e.getPhotoUrl()
         );
     }
 

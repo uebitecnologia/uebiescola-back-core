@@ -8,5 +8,6 @@ package br.com.uebiescola.core.presentation.dto;
 public record UserProfileUpdateRequest(
         String name,
         String jobTitle,
-        String signature
+        String signature,
+        String photoUrl
 ) {}

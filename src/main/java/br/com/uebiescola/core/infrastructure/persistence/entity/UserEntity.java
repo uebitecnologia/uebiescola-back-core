@@ -82,4 +82,8 @@ public class UserEntity {
 
     @Column(name = "signature", columnDefinition = "TEXT")
     private String signature;
+
+    /** URL pública do avatar no bucket GCS. Pode ser null. */
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
 }
