@@ -71,6 +71,15 @@ public class InternalSchoolController {
         resp.put("adminEmail", admin != null ? admin.getEmail() : null);
         resp.put("adminName", admin != null ? admin.getName() : null);
         resp.put("adminCpf", admin != null ? admin.getCpf() : null);
+        // Identidade visual + contato pra templates de comunicação
+        resp.put("primaryColor", school.getPrimaryColor());
+        if (school.getAddress() != null) {
+            resp.put("phone", school.getAddress().getPhone());
+            resp.put("mobile", school.getAddress().getMobile());
+        } else {
+            resp.put("phone", null);
+            resp.put("mobile", null);
+        }
         // Identidade configurada nas comunicações (Reply-To + From-Name)
         resp.put("senderName", settings != null ? settings.getSenderName() : null);
         resp.put("senderEmail", settings != null ? settings.getSenderEmail() : null);
