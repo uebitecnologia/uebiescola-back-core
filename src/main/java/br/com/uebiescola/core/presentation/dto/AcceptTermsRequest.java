@@ -1,3 +1,3 @@
 package br.com.uebiescola.core.presentation.dto;
 
-public record AcceptTermsRequest(Long termsVersionId) {}
+public record AcceptTermsRequest(String termsVersionId) {}

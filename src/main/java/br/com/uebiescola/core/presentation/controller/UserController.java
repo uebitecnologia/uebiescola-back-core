@@ -7,9 +7,11 @@ import br.com.uebiescola.core.infrastructure.persistence.entity.UserEntity;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaAccessLevelRepository;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
+import br.com.uebiescola.core.infrastructure.security.TenantResolver;
 import br.com.uebiescola.core.presentation.dto.UserDTO;
 import br.com.uebiescola.core.presentation.dto.UserProfileDTO;
 import br.com.uebiescola.core.presentation.dto.UserProfileUpdateRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,6 +33,7 @@ public class UserController {
     private final JpaUserRepository userRepository;
     private final JpaAccessLevelRepository accessLevelRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantResolver tenantResolver;
 
     // ===================== SCHOOL USERS (ADMIN) =====================
 
@@ -38,16 +41,11 @@ public class UserController {
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<List<UserDTO>> listSchoolUsers(
             @RequestParam(value = "schoolId", required = false) Long requestSchoolId,
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal AuthenticatedUser user,
+            HttpServletRequest request) {
 
-        Long targetSchoolId;
-        if (user.getRole().contains("CEO")) {
-            // CEO can pass schoolId as param, or it comes from X-School-Id header
-            targetSchoolId = requestSchoolId != null ? requestSchoolId : user.getSchoolId();
-            if (targetSchoolId == null) return ResponseEntity.badRequest().build();
-        } else {
-            targetSchoolId = user.getSchoolId();
-        }
+        Long targetSchoolId = tenantResolver.resolve(user, requestSchoolId, request);
+        if (targetSchoolId == null) return ResponseEntity.badRequest().build();
 
         List<UserDTO> users = userRepository.findAllBySchoolId(targetSchoolId).stream()
                 .map(this::toDTO)
@@ -61,23 +59,12 @@ public class UserController {
     @Transactional
     public ResponseEntity<?> createSchoolUser(
             @RequestBody UserDTO dto,
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal AuthenticatedUser user,
+            HttpServletRequest request) {
 
-        Long schoolId;
-        if (user.getRole().contains("CEO")) {
-            // CEO can pass schoolId in body, or it comes from X-School-Id header
-            schoolId = dto.schoolId() != null ? dto.schoolId() : user.getSchoolId();
-            if (schoolId == null) return ResponseEntity.badRequest().body(Map.of("error", "schoolId é obrigatório"));
-        } else {
-            schoolId = user.getSchoolId();
-        }
+        Long schoolId = tenantResolver.resolve(user, dto.schoolId(), request);
+        if (schoolId == null) return ResponseEntity.badRequest().body(Map.of("error", "schoolId é obrigatório"));
 
-        if (userRepository.existsByEmail(dto.email())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "E-mail já cadastrado"));
-        }
-        if (dto.cpf() != null && userRepository.existsByCpf(dto.cpf())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "CPF já cadastrado"));
-        }
         if (dto.password() == null || dto.password().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Senha é obrigatória"));
         }
@@ -92,6 +79,25 @@ public class UserController {
         // ADMIN da escola não pode criar CEO
         if (!user.getRole().contains("CEO") && role == UserRole.ROLE_CEO) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Sem permissão para criar usuário CEO"));
+        }
+
+        // Validação de duplicidade alinhada com o índice unique parcial (V18):
+        // CPF/email são únicos POR ESCOLA, exceto pra ROLE_CEO que é único globalmente
+        // (CEO não tem schoolId fixo, é cross-tenant).
+        if (role == UserRole.ROLE_CEO) {
+            if (userRepository.existsByEmailAndRole(dto.email(), UserRole.ROLE_CEO)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Já existe um CEO com esse e-mail"));
+            }
+            if (dto.cpf() != null && userRepository.existsByCpfAndRole(dto.cpf(), UserRole.ROLE_CEO)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Já existe um CEO com esse CPF"));
+            }
+        } else {
+            if (userRepository.existsByEmailAndSchoolId(dto.email(), schoolId)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "E-mail já cadastrado nesta escola"));
+            }
+            if (dto.cpf() != null && userRepository.existsByCpfAndSchoolId(dto.cpf(), schoolId)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "CPF já cadastrado nesta escola"));
+            }
         }
 
         UserEntity entity = UserEntity.builder()

@@ -17,4 +17,4 @@ COPY --from=extract /app/spring-boot-loader/ ./
 COPY --from=extract /app/snapshot-dependencies/ ./
 COPY --from=extract /app/application/ ./
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xms64m", "-Xmx192m", "-XX:+UseSerialGC", "-XX:MaxMetaspaceSize=128m", "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-Xms64m", "-Xmx256m", "-XX:+UseSerialGC", "-XX:MaxMetaspaceSize=256m", "org.springframework.boot.loader.launch.JarLauncher"]

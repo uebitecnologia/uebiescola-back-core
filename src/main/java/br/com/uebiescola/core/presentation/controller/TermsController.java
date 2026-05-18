@@ -92,10 +92,12 @@ public class TermsController {
         String ipAddress = getClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
 
+        Long termsVersionId = resolveTermsVersionId(request.termsVersionId());
+
         TermsAcceptance acceptance = acceptTermsUseCase.execute(
                 user.getId(),
                 user.getSchoolId(),
-                request.termsVersionId(),
+                termsVersionId,
                 ipAddress,
                 userAgent
         );

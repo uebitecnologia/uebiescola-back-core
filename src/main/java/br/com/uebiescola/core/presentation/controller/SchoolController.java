@@ -274,6 +274,51 @@ public class SchoolController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Endpoint cirúrgico pra atualizar apenas pixKey + multa + juros da escola, usado
+     * pela tab Financeiro do Settings. Evita exigir que o frontend monte o payload
+     * completo de PUT /schools/{uuid} só pra mexer em 3 campos.
+     */
+    @PutMapping("/{uuid}/finance-config")
+    @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> updateFinanceConfig(
+            @PathVariable("uuid") String idOrUuid,
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+
+        Optional<School> existingOpt = resolveSchool(idOrUuid);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Long id = existingOpt.get().getId();
+
+        if (!user.getRole().contains("CEO") && !id.equals(user.getSchoolId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return schoolRepository.findById(id)
+                .map(school -> {
+                    if (body.containsKey("pixKey")) {
+                        Object v = body.get("pixKey");
+                        school.setPixKey(v == null ? "" : v.toString());
+                    }
+                    if (body.containsKey("lateFeePercentage")) {
+                        Object v = body.get("lateFeePercentage");
+                        school.setLateFeePercentage(v == null ? 0.0 : ((Number) v).doubleValue());
+                    }
+                    if (body.containsKey("interestRate")) {
+                        Object v = body.get("interestRate");
+                        school.setInterestRate(v == null ? 0.0 : ((Number) v).doubleValue());
+                    }
+                    schoolRepository.save(school);
+                    return ResponseEntity.ok(Map.<String, Object>of(
+                            "pixKey", school.getPixKey() == null ? "" : school.getPixKey(),
+                            "lateFeePercentage", school.getLateFeePercentage(),
+                            "interestRate", school.getInterestRate()
+                    ));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/{uuid}/status")
     @PreAuthorize("hasRole('CEO')")
     @Transactional

@@ -3,7 +3,9 @@ package br.com.uebiescola.core.presentation.controller;
 import br.com.uebiescola.core.infrastructure.persistence.entity.AccessLevelEntity;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaAccessLevelRepository;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
+import br.com.uebiescola.core.infrastructure.security.TenantResolver;
 import br.com.uebiescola.core.presentation.dto.AccessLevelDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,14 +25,16 @@ import java.util.UUID;
 public class AccessLevelController {
 
     private final JpaAccessLevelRepository repository;
+    private final TenantResolver tenantResolver;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<List<AccessLevelDTO>> list(
             @RequestParam(value = "schoolId", required = false) Long requestSchoolId,
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal AuthenticatedUser user,
+            HttpServletRequest request) {
 
-        Long schoolId = resolveSchoolId(user, requestSchoolId);
+        Long schoolId = tenantResolver.resolve(user, requestSchoolId, request);
         if (schoolId == null) return ResponseEntity.badRequest().build();
 
         List<AccessLevelDTO> levels = repository.findAllBySchoolIdOrderByNameAsc(schoolId).stream()
@@ -44,9 +48,10 @@ public class AccessLevelController {
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     public ResponseEntity<List<AccessLevelDTO>> listActive(
             @RequestParam(value = "schoolId", required = false) Long requestSchoolId,
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal AuthenticatedUser user,
+            HttpServletRequest request) {
 
-        Long schoolId = resolveSchoolId(user, requestSchoolId);
+        Long schoolId = tenantResolver.resolve(user, requestSchoolId, request);
         if (schoolId == null) return ResponseEntity.badRequest().build();
 
         List<AccessLevelDTO> levels = repository.findAllBySchoolIdAndActiveTrue(schoolId).stream()
@@ -57,11 +62,14 @@ public class AccessLevelController {
     }
 
     @GetMapping("/{uuid}")
-    @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AccessLevelDTO> getById(
             @PathVariable("uuid") String idOrUuid,
             @AuthenticationPrincipal AuthenticatedUser user) {
-
+        // PermissionsContext do admin chama esse endpoint com o próprio accessLevelId
+        // do usuário logado pra montar as permissões da sessão — então tem que aceitar
+        // qualquer usuário autenticado (TEACHER, GUARDIAN inclusive). O hasAccess interno
+        // ainda isola por schoolId.
         return resolveAccessLevel(idOrUuid)
                 .filter(e -> hasAccess(user, e.getSchoolId()))
                 .map(e -> ResponseEntity.ok(toDTO(e)))
@@ -73,9 +81,10 @@ public class AccessLevelController {
     @Transactional
     public ResponseEntity<AccessLevelDTO> create(
             @RequestBody AccessLevelDTO dto,
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal AuthenticatedUser user,
+            HttpServletRequest request) {
 
-        Long schoolId = resolveSchoolId(user, dto.schoolId());
+        Long schoolId = tenantResolver.resolve(user, dto.schoolId(), request);
         if (schoolId == null) return ResponseEntity.badRequest().build();
 
         AccessLevelEntity entity = AccessLevelEntity.builder()
@@ -171,20 +180,13 @@ public class AccessLevelController {
         }
     }
 
-    private Long resolveSchoolId(AuthenticatedUser user, Long requestSchoolId) {
-        if (user.getRole().contains("CEO")) {
-            // CEO can pass schoolId as param, or it comes from X-School-Id header
-            return requestSchoolId != null ? requestSchoolId : user.getSchoolId();
-        }
-        return user.getSchoolId();
-    }
-
     private boolean hasAccess(AuthenticatedUser user, Long schoolId) {
         return user.getRole().contains("CEO") || schoolId.equals(user.getSchoolId());
     }
 
     private AccessLevelDTO toDTO(AccessLevelEntity entity) {
         return new AccessLevelDTO(
+                entity.getId(),
                 entity.getUuid(),
                 entity.getSchoolId(),
                 entity.getName(),
