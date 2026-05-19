@@ -8,6 +8,7 @@ import br.com.uebiescola.core.domain.model.*;
 import br.com.uebiescola.core.domain.model.enums.UserRole;
 import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import br.com.uebiescola.core.domain.repository.UserRepository;
+import br.com.uebiescola.core.infrastructure.client.PlansAsaasLogoClient;
 import br.com.uebiescola.core.infrastructure.client.PlansSubscriptionClient;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
 import br.com.uebiescola.core.presentation.dto.SchoolRequest;
@@ -43,6 +44,7 @@ public class SchoolController {
     private final SchoolRepository schoolRepository;
     private final UserRepository userRepository;
     private final PlansSubscriptionClient plansSubscriptionClient;
+    private final PlansAsaasLogoClient plansAsaasLogoClient;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -402,11 +404,22 @@ public class SchoolController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        school.setLogoBytes(file.getBytes());
+        byte[] logoBytes = file.getBytes();
+        school.setLogoBytes(logoBytes);
         school.setLogoContentType(file.getContentType());
         school.setActive(true);
 
         schoolRepository.save(school);
+
+        // Best-effort: propaga pra subconta Asaas pra que boletos da escola
+        // saiam com o logo. Falha silenciosa se subconta nao existir.
+        try {
+            plansAsaasLogoClient.propagateToAsaas(
+                    school.getId(), logoBytes, file.getContentType(), file.getOriginalFilename());
+        } catch (Exception ignore) {
+            // logado pelo cliente
+        }
+
         return ResponseEntity.ok().build();
     }
 
