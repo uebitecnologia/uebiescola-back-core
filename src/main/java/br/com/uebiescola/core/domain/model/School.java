@@ -3,11 +3,12 @@ package br.com.uebiescola.core.domain.model;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
 public class School {
-    @JsonIgnore
+    // @JsonIgnore removido 19/05: SchoolList do admin usa school.id pra
+    // navegar/dropdown; sem id no JSON, URLs ficavam /schools/NaN e os
+    // dropdowns colidiam (todos openDropdownId === undefined).
     private Long id;
     private UUID uuid;
     private UUID externalId;
