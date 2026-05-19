@@ -11,6 +11,7 @@ import br.com.uebiescola.core.domain.repository.UserRepository;
 import br.com.uebiescola.core.infrastructure.client.PlansAsaasLogoClient;
 import br.com.uebiescola.core.infrastructure.client.PlansSubscriptionClient;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
+import br.com.uebiescola.core.presentation.dto.SchoolListItemResponse;
 import br.com.uebiescola.core.presentation.dto.SchoolRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -151,14 +152,18 @@ public class SchoolController {
 
     @GetMapping
     @PreAuthorize("hasRole('CEO')")
-    public ResponseEntity<List<School>> listAll() {
+    public ResponseEntity<List<SchoolListItemResponse>> listAll() {
         List<School> schools = findSchoolsUseCase.execute();
 
         schools.forEach(school -> {
             findAdminUserForSchool(school.getId()).ifPresent(school::setAdminUser);
         });
 
-        return ResponseEntity.ok(schools);
+        List<SchoolListItemResponse> result = schools.stream()
+                .map(SchoolListItemResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{uuid}")
