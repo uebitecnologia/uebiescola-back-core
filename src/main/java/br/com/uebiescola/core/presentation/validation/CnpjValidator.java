@@ -7,7 +7,9 @@ public class CnpjValidator implements ConstraintValidator<ValidCNPJ, String> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext ctx) {
-        if (value == null || value.isBlank()) return false;
+        // null/blank OK — combo PF/PJ (pelo menos um) e validado em outro nivel.
+        // Pos plano Solo (PF sem CNPJ), CNPJ deixou de ser obrigatorio.
+        if (value == null || value.isBlank()) return true;
         String digits = value.replaceAll("\\D", "");
         if (digits.length() != 14) return false;
         if (digits.chars().distinct().count() == 1) return false;

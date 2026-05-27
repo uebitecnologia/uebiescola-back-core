@@ -42,8 +42,20 @@ public class RegisterSchoolUseCase {
             throw new IllegalArgumentException("Este CPF já está cadastrado.");
         }
 
-        if (jpaSchoolRepository.existsByCnpj(request.cnpj())) {
+        // Validacao PF/PJ — exatamente um caminho deve estar preenchido
+        if (!request.isPj() && !request.isPf()) {
+            throw new IllegalArgumentException("Informe CNPJ (PJ) ou CPF + data de nascimento (PF).");
+        }
+        if (request.isPj() && jpaSchoolRepository.existsByCnpj(request.cnpj())) {
             throw new IllegalArgumentException("Este CNPJ já está cadastrado.");
+        }
+        if (request.isPf()) {
+            if (request.birthDate() == null) {
+                throw new IllegalArgumentException("Data de nascimento e obrigatoria pra cadastro PF.");
+            }
+            if (jpaSchoolRepository.existsByCpf(request.cpf())) {
+                throw new IllegalArgumentException("Este CPF já está cadastrado.");
+            }
         }
 
         // Gerar subdomain a partir do nome se não informado
@@ -57,12 +69,20 @@ public class RegisterSchoolUseCase {
             throw new IllegalArgumentException("Este subdomínio já está em uso.");
         }
 
-        // Criar escola
+        // Criar escola/cliente — PJ leva cnpj+legalName, PF leva cpf+birthDate
         School school = new School();
         school.setExternalId(UUID.randomUUID());
         school.setName(request.schoolName());
-        school.setLegalName(request.schoolName());
-        school.setCnpj(request.cnpj());
+        if (request.isPj()) {
+            school.setLegalName(request.legalName() != null && !request.legalName().isBlank()
+                    ? request.legalName()
+                    : request.schoolName());
+            school.setCnpj(request.cnpj());
+        } else {
+            // PF (Solo) — sem razao social, sem CNPJ
+            school.setCpf(request.cpf());
+            school.setBirthDate(request.birthDate());
+        }
         school.setSubdomain(subdomain);
         school.setActive(true);
 

@@ -429,9 +429,21 @@ public class SchoolController {
     }
 
     private School mapToDomain(School school, SchoolRequest request) {
+        // Valida combo PF/PJ (pelo menos um caminho preenchido)
+        boolean hasCnpj = request.cnpj() != null && !request.cnpj().isBlank();
+        boolean hasCpf = request.cpf() != null && !request.cpf().isBlank();
+        if (!hasCnpj && !hasCpf) {
+            throw new IllegalArgumentException("Informe CNPJ (PJ) ou CPF + data de nascimento (PF).");
+        }
+        if (hasCpf && request.birthDate() == null) {
+            throw new IllegalArgumentException("Data de nascimento e obrigatoria pra cadastro PF.");
+        }
+
         school.setName(request.name());
         school.setLegalName(request.legalName());
         school.setCnpj(request.cnpj());
+        school.setCpf(request.cpf());
+        school.setBirthDate(request.birthDate());
         school.setStateRegistration(request.stateRegistration());
         school.setMunicipalRegistration(request.municipalRegistration());
 
@@ -487,12 +499,15 @@ public class SchoolController {
         if (school.getId() == null) return;
         var addr = school.getAddress();
         try {
+            boolean isPf = (school.getCnpj() == null || school.getCnpj().isBlank())
+                    && school.getCpf() != null && !school.getCpf().isBlank();
             plansSubscriptionClient.ensureAsaasSubaccount(
                     new PlansSubscriptionClient.EnsureSubaccountRequest(
                             school.getId(),
                             school.getName(),
                             school.getLegalName(),
                             school.getCnpj(),
+                            school.getCpf(),
                             resolveAdminEmail(school, request),
                             addr != null ? addr.getPhone() : null,
                             addr != null ? addr.getMobile() : null,
@@ -501,8 +516,8 @@ public class SchoolController {
                             addr != null ? addr.getNumber() : null,
                             addr != null ? addr.getComplement() : null,
                             addr != null ? addr.getNeighborhood() : null,
-                            "LIMITED",
-                            null
+                            isPf ? null : "LIMITED",
+                            isPf && school.getBirthDate() != null ? school.getBirthDate().toString() : null
                     ));
             log.info("[ASAAS-SUB] ensureSubaccount disparado para escola {}", school.getId());
         } catch (Exception e) {

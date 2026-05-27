@@ -19,6 +19,8 @@ public interface JpaSchoolRepository extends JpaRepository<SchoolEntity, Long> {
 
     boolean existsByCnpj(String cnpj);
 
+    boolean existsByCpf(String cpf);
+
     @Modifying
     @Query("UPDATE SchoolEntity s SET s.active = :status WHERE s.id = :id")
     void updateStatus(@Param("id") Long id, @Param("status") Boolean status);

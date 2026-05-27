@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,11 +34,20 @@ public class SchoolEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    /** Razao social — obrigatoria pra PJ, null pra PF (Solo). */
     private String legalName;
 
-    @Column(unique = true, nullable = false)
+    /** CNPJ — exigido pra PJ. PF (Solo) usa apenas cpf. */
+    @Column(unique = true)
     private String cnpj;
+
+    /** CPF do titular — exigido pra PF (Solo). PJ pode deixar null. */
+    @Column(unique = true)
+    private String cpf;
+
+    /** Data de nascimento — exigida pelo Asaas pra subconta PF. PJ ignora. */
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
     @Column(unique = true)
     private String stateRegistration;

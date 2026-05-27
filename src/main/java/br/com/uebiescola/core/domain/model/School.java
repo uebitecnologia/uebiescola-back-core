@@ -1,6 +1,7 @@
 package br.com.uebiescola.core.domain.model;
 
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,6 +15,10 @@ public class School {
     private String name;
     private String legalName;
     private String cnpj;
+    /** CPF do titular — exigido pra PF (Solo). PJ usa null. */
+    private String cpf;
+    /** Data de nascimento — exigida pelo Asaas pra subconta PF. */
+    private LocalDate birthDate;
     private String stateRegistration;
     private String municipalRegistration;
     private String subdomain;

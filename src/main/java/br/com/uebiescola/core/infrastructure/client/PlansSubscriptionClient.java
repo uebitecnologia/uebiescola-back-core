@@ -112,6 +112,7 @@ public interface PlansSubscriptionClient {
             String name,
             String legalName,
             String cnpj,
+            String cpf,            // PF (Solo) — alternativa ao cnpj
             String email,
             String phone,
             String mobilePhone,
