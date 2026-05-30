@@ -75,13 +75,13 @@ public class OnboardingChecklistController {
                 .getInvoices(authHeader, schoolId).isEmpty());
 
         List<Map<String, Object>> steps = new ArrayList<>();
-        steps.add(step("school", "Completar dados da escola", schoolComplete, "/settings"));
-        steps.add(step("payment", "Configurar pagamento", paymentConfigured, "/settings/financial"));
-        steps.add(step("class", "Criar a primeira turma", hasClass, "/academic/classes/new"));
-        steps.add(step("guardian", "Cadastrar primeiro responsavel", hasGuardian, "/guardians"));
-        steps.add(step("student", "Cadastrar primeiro aluno", hasStudent, "/academic/students/new"));
-        steps.add(step("teacher", "Convidar primeiro professor", hasTeacher, "/academic/teachers"));
-        steps.add(step("announcement", "Enviar primeiro comunicado", hasAnnouncement, "/communication/announcements/new"));
+        steps.add(step("school", "Completar dados da escola", schoolComplete, "/school"));
+        steps.add(step("payment", "Configurar pagamento", paymentConfigured, "/settings"));
+        steps.add(step("class", "Criar a primeira turma", hasClass, "/classes/new"));
+        steps.add(step("guardian", "Cadastrar primeiro responsavel", hasGuardian, "/guardians/new"));
+        steps.add(step("student", "Cadastrar primeiro aluno", hasStudent, "/students/new"));
+        steps.add(step("teacher", "Convidar primeiro professor", hasTeacher, "/teachers/new"));
+        steps.add(step("announcement", "Enviar primeiro comunicado", hasAnnouncement, "/communication/announcements"));
         steps.add(step("invoice", "Gerar a primeira mensalidade", hasInvoice, "/finance/invoices/new"));
 
         long completed = steps.stream().filter(s -> Boolean.TRUE.equals(s.get("done"))).count();
