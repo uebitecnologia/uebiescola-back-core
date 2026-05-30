@@ -3,6 +3,7 @@ package br.com.uebiescola.core.presentation.controller;
 import br.com.uebiescola.core.infrastructure.client.AcademicOnboardingClient;
 import br.com.uebiescola.core.infrastructure.client.CommunicationOnboardingClient;
 import br.com.uebiescola.core.infrastructure.client.FinanceClient;
+import br.com.uebiescola.core.infrastructure.client.FinanceOnboardingClient;
 import br.com.uebiescola.core.infrastructure.client.PlansOnboardingClient;
 import br.com.uebiescola.core.infrastructure.persistence.entity.SchoolEntity;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository;
@@ -37,6 +38,7 @@ public class OnboardingChecklistController {
     private final JpaSchoolRepository schoolRepository;
     private final AcademicOnboardingClient academicOnboardingClient;
     private final FinanceClient financeClient;
+    private final FinanceOnboardingClient financeOnboardingClient;
     private final PlansOnboardingClient plansOnboardingClient;
     private final CommunicationOnboardingClient communicationOnboardingClient;
 
@@ -57,9 +59,15 @@ public class OnboardingChecklistController {
 
         // Cada step e independente — uma falha de Feign nao zera o checklist.
         boolean schoolComplete = isSchoolDataComplete(schoolId);
-        boolean paymentConfigured = checkSilent(() -> plansOnboardingClient
+        // Pagamento "configurado" = subconta Asaas ACTIVE + conta bancaria cadastrada
+        // (sem conta bancaria, Asaas nao consegue repassar o dinheiro recebido).
+        boolean asaasReady = checkSilent(() -> plansOnboardingClient
                 .hasPaymentConfigured(schoolId, internalToken)
                 .getOrDefault("configured", false));
+        boolean hasBankAccount = checkSilent(() -> financeOnboardingClient
+                .hasBankAccount(schoolId, internalToken)
+                .getOrDefault("exists", false));
+        boolean paymentConfigured = asaasReady && hasBankAccount;
 
         // Counts academic num unico request (internal endpoint)
         Map<String, Long> academicCounts = checkSilentMap(() -> academicOnboardingClient
