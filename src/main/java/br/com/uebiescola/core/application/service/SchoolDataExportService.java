@@ -23,6 +23,9 @@ public class SchoolDataExportService {
     private final AcademicClient academicClient;
     private final FinanceClient financeClient;
 
+    @org.springframework.beans.factory.annotation.Value("${uebi.internal-token}")
+    private String internalToken;
+
     private static final String[] STUDENT_HEADERS = {"Nome", "CPF", "Email", "Nascimento", "Genero", "Telefone", "Status", "Turma"};
     private static final String[] CLASS_HEADERS = {"Nome", "Turno", "Ano Letivo", "Capacidade", "Professor Titular"};
     private static final String[] TEACHER_HEADERS = {"Nome", "CPF", "Email", "Telefone", "Especialidade", "Status"};
@@ -50,19 +53,19 @@ public class SchoolDataExportService {
             createSchoolSheet(workbook, headerStyle, school);
 
             // Sheet: Alunos
-            List<Map<String, Object>> students = fetchSafely(() -> academicClient.getStudentsBySchool(schoolId, authToken), "Alunos");
+            List<Map<String, Object>> students = fetchSafely(() -> academicClient.getStudentsBySchool(schoolId, internalToken), "Alunos");
             if (students != null) {
                 createDataSheet(workbook, headerStyle, "Alunos", STUDENT_HEADERS, STUDENT_FIELDS, students);
             }
 
             // Sheet: Turmas
-            List<Map<String, Object>> classes = fetchSafely(() -> academicClient.getClassesBySchool(schoolId, authToken), "Turmas");
+            List<Map<String, Object>> classes = fetchSafely(() -> academicClient.getClassesBySchool(schoolId, internalToken), "Turmas");
             if (classes != null) {
                 createDataSheet(workbook, headerStyle, "Turmas", CLASS_HEADERS, CLASS_FIELDS, classes);
             }
 
             // Sheet: Professores
-            List<Map<String, Object>> teachers = fetchSafely(() -> academicClient.getTeachersBySchool(schoolId, authToken), "Professores");
+            List<Map<String, Object>> teachers = fetchSafely(() -> academicClient.getTeachersBySchool(schoolId, internalToken), "Professores");
             if (teachers != null) {
                 createDataSheet(workbook, headerStyle, "Professores", TEACHER_HEADERS, TEACHER_FIELDS, teachers);
             }

@@ -21,6 +21,9 @@ public class SchoolDataImportService {
     private final AcademicClient academicClient;
     private final FinanceClient financeClient;
 
+    @org.springframework.beans.factory.annotation.Value("${uebi.internal-token}")
+    private String internalToken;
+
     private static final Map<String, String[]> SHEET_FIELDS = Map.of(
             "Alunos", new String[]{"name", "cpf", "email", "birthDate", "gender", "phone", "status", "className"},
             "Turmas", new String[]{"name", "shift", "schoolYear", "capacity", "headTeacherName"},
@@ -102,10 +105,12 @@ public class SchoolDataImportService {
     }
 
     private void sendToService(String sheetName, Map<String, Object> rowData, Long schoolId, String authToken) {
+        // NOTE: Esse metodo e placeholder — faz GET em vez de POST. Quando endpoints
+        // POST de import existirem em academic/finance, trocar aqui.
         switch (sheetName) {
-            case "Alunos" -> academicClient.getStudentsBySchool(schoolId, authToken);
-            case "Turmas" -> academicClient.getClassesBySchool(schoolId, authToken);
-            case "Professores" -> academicClient.getTeachersBySchool(schoolId, authToken);
+            case "Alunos" -> academicClient.getStudentsBySchool(schoolId, internalToken);
+            case "Turmas" -> academicClient.getClassesBySchool(schoolId, internalToken);
+            case "Professores" -> academicClient.getTeachersBySchool(schoolId, internalToken);
             case "Responsaveis" -> financeClient.getGuardians(authToken, schoolId);
             default -> log.warn("Importacao para aba '{}' ainda nao implementada (POST endpoints pendentes)", sheetName);
         }
