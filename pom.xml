@@ -157,6 +157,20 @@
             <artifactId>thumbnailator</artifactId>
             <version>0.4.20</version>
         </dependency>
+
+        <!-- TwelveMonkeys ImageIO: leitura de WebP e variantes que o Java SE
+             não suporta nativamente. Sem isso, upload de WebP falha com
+             "No suitable ImageReader found for source data". -->
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>3.10.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-jpeg</artifactId>
+            <version>3.10.1</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

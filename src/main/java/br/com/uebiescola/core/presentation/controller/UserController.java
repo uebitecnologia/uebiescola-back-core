@@ -58,7 +58,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
     @Transactional
     public ResponseEntity<?> createSchoolUser(
-            @RequestBody UserDTO dto,
+            @RequestBody @jakarta.validation.Valid UserDTO dto,
             @AuthenticationPrincipal AuthenticatedUser user,
             HttpServletRequest request) {
 
@@ -342,7 +342,8 @@ public class UserController {
                 entity.getSchoolId(),
                 entity.getActive() != null ? entity.getActive() : true,
                 entity.getAccessLevelId(),
-                accessLevelName
+                accessLevelName,
+                entity.getPhotoUrl()
         );
     }
 }

@@ -1,5 +1,8 @@
 server:
   port: 8081
+  error:
+    include-message: always
+    include-binding-errors: always
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/uebiescola_db}
@@ -59,11 +62,14 @@ feign:
     url: ${FEIGN_ACADEMIC_SERVICE_URL:http://localhost:8084/api/v1/academic}
   finance-service:
     url: ${FEIGN_FINANCE_SERVICE_URL:http://localhost:8083/api/v1}
+  communication-service:
+    url: ${FEIGN_COMMUNICATION_SERVICE_URL:http://localhost:8086/api/v1}
 
 uebi:
   jwt:
     secret: ${JWT_SECRET:dev-insecure-do-not-use-in-production-set-JWT_SECRET-env-var-0123456789abcdef}
     expiration: 28800000
+  internal-token: ${UEBI_INTERNAL_TOKEN:dev-internal-token-please-override-in-prod}
 
 loki:
   url: ${LOKI_URL:http://loki:3100}
