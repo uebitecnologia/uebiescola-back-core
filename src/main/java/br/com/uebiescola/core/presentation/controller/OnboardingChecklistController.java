@@ -1,6 +1,6 @@
 package br.com.uebiescola.core.presentation.controller;
 
-import br.com.uebiescola.core.infrastructure.client.AcademicClient;
+import br.com.uebiescola.core.infrastructure.client.AcademicOnboardingClient;
 import br.com.uebiescola.core.infrastructure.client.CommunicationOnboardingClient;
 import br.com.uebiescola.core.infrastructure.client.FinanceClient;
 import br.com.uebiescola.core.infrastructure.client.PlansOnboardingClient;
@@ -35,7 +35,7 @@ import java.util.Map;
 public class OnboardingChecklistController {
 
     private final JpaSchoolRepository schoolRepository;
-    private final AcademicClient academicClient;
+    private final AcademicOnboardingClient academicOnboardingClient;
     private final FinanceClient financeClient;
     private final PlansOnboardingClient plansOnboardingClient;
     private final CommunicationOnboardingClient communicationOnboardingClient;
@@ -60,14 +60,16 @@ public class OnboardingChecklistController {
         boolean paymentConfigured = checkSilent(() -> plansOnboardingClient
                 .hasPaymentConfigured(schoolId, internalToken)
                 .getOrDefault("configured", false));
-        boolean hasClass = checkSilent(() -> !academicClient
-                .getClassesBySchool(schoolId, authHeader).isEmpty());
+
+        // Counts academic num unico request (internal endpoint)
+        Map<String, Long> academicCounts = checkSilentMap(() -> academicOnboardingClient
+                .getOnboardingCounts(schoolId, internalToken));
+        boolean hasClass = academicCounts.getOrDefault("classes", 0L) > 0L;
+        boolean hasStudent = academicCounts.getOrDefault("students", 0L) > 0L;
+        boolean hasTeacher = academicCounts.getOrDefault("teachers", 0L) > 0L;
+
         boolean hasGuardian = checkSilent(() -> !financeClient
                 .getGuardians(authHeader, schoolId).isEmpty());
-        boolean hasStudent = checkSilent(() -> !academicClient
-                .getStudentsBySchool(schoolId, authHeader).isEmpty());
-        boolean hasTeacher = checkSilent(() -> !academicClient
-                .getTeachersBySchool(schoolId, authHeader).isEmpty());
         boolean hasAnnouncement = checkSilent(() -> communicationOnboardingClient
                 .announcementCount(schoolId, internalToken)
                 .getOrDefault("count", 0L) > 0L);
@@ -115,6 +117,16 @@ public class OnboardingChecklistController {
                 && s.getAddress().getCity() != null
                 && !s.getAddress().getCity().isBlank();
         return hasDocument && hasLogo && hasAddress;
+    }
+
+    private Map<String, Long> checkSilentMap(java.util.function.Supplier<Map<String, Long>> supplier) {
+        try {
+            Map<String, Long> result = supplier.get();
+            return result != null ? result : Map.of();
+        } catch (Exception e) {
+            log.warn("[ONBOARDING] check map falhou: {}", e.getMessage());
+            return Map.of();
+        }
     }
 
     private boolean checkSilent(java.util.function.Supplier<Boolean> supplier) {
