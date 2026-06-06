@@ -76,6 +76,9 @@ public class SchoolEntity {
     @Column(name = "interest_rate")
     private Double interestRate;
 
+    @Column(name = "referral_code", unique = true, length = 8)
+    private String referralCode;
+
     private Boolean active;
 
     @CreationTimestamp

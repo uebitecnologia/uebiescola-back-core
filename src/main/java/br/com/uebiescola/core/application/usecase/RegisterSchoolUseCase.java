@@ -4,6 +4,7 @@ import br.com.uebiescola.core.domain.model.School;
 import br.com.uebiescola.core.domain.model.SchoolContract;
 import br.com.uebiescola.core.domain.model.User;
 import br.com.uebiescola.core.domain.model.enums.UserRole;
+import br.com.uebiescola.core.application.service.ReferralService;
 import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import br.com.uebiescola.core.domain.repository.UserRepository;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository;
@@ -31,6 +32,7 @@ public class RegisterSchoolUseCase {
     private final JpaUserRepository jpaUserRepository;
     private final JpaSchoolRepository jpaSchoolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ReferralService referralService;
 
     @Transactional
     public SchoolRegistrationResponse execute(SchoolRegistrationRequest request) {
@@ -118,6 +120,16 @@ public class RegisterSchoolUseCase {
             User admin = savedSchool.getAdminUser();
             admin.setSchoolId(savedSchool.getId());
             userRepository.save(admin);
+        }
+
+        // Indicacao (best-effort: nao falha o cadastro se der ruim)
+        if (request.referralCode() != null && !request.referralCode().isBlank()) {
+            try {
+                referralService.registerReferral(request.referralCode(), savedSchool.getId());
+            } catch (Exception e) {
+                log.warn("[REFERRAL] Falha ao registrar indicacao codigo={} schoolId={}: {}",
+                        request.referralCode(), savedSchool.getId(), e.getMessage());
+            }
         }
 
         log.info("Nova escola registrada: {} ({})", savedSchool.getName(), savedSchool.getSubdomain());

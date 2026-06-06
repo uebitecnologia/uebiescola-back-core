@@ -24,6 +24,7 @@ public class CacheConfig {
 
     public static final String CACHE_GLOBAL_SETTINGS_ALL = "global-settings-all";
     public static final String CACHE_GLOBAL_SETTINGS_BY_CATEGORY = "global-settings-by-category";
+    public static final String CACHE_BRASILAPI_CNPJ = "brasilapi-cnpj";
 
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
@@ -38,7 +39,8 @@ public class CacheConfig {
 
         Map<String, RedisCacheConfiguration> perCache = Map.of(
                 CACHE_GLOBAL_SETTINGS_ALL, defaultConfig.entryTtl(Duration.ofMinutes(15)),
-                CACHE_GLOBAL_SETTINGS_BY_CATEGORY, defaultConfig.entryTtl(Duration.ofMinutes(15))
+                CACHE_GLOBAL_SETTINGS_BY_CATEGORY, defaultConfig.entryTtl(Duration.ofMinutes(15)),
+                CACHE_BRASILAPI_CNPJ, defaultConfig.entryTtl(Duration.ofDays(30))
         );
 
         return RedisCacheManager.builder(connectionFactory)

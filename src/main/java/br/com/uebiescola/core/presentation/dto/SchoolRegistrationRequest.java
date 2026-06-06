@@ -29,7 +29,8 @@ public record SchoolRegistrationRequest(
         @NotBlank String adminCpf,
         @NotBlank @Size(min = 6) String adminPassword,
         String phone,
-        String subdomain
+        String subdomain,
+        String referralCode
 ) {
     /** true se preencheu o caminho PJ (cnpj). */
     public boolean isPj() { return cnpj != null && !cnpj.isBlank(); }
