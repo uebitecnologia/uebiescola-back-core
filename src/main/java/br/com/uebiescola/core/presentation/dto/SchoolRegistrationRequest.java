@@ -30,7 +30,9 @@ public record SchoolRegistrationRequest(
         @NotBlank @Size(min = 6) String adminPassword,
         String phone,
         String subdomain,
-        String referralCode
+        String referralCode,
+        // UUID do plano escolhido no site /precos (opcional — se null, trial pega plano mais barato)
+        java.util.UUID planUuid
 ) {
     /** true se preencheu o caminho PJ (cnpj). */
     public boolean isPj() { return cnpj != null && !cnpj.isBlank(); }

@@ -25,6 +25,15 @@ public interface PlansSubscriptionClient {
     ) {}
 
     /**
+     * Cria subscription TRIAL com plano escolhido pelo cliente no site
+     * (fluxo /precos -> /cadastro?plan={uuid}). Endpoint interno.
+     */
+    @PostMapping("/internal/subscriptions/trial")
+    Object createTrialSubscriptionWithPlan(@RequestBody TrialWithPlanRequest request);
+
+    record TrialWithPlanRequest(Long schoolId, java.util.UUID planUuid, Integer trialDays) {}
+
+    /**
      * Cria subscription PAGA (cria customer + subscription no Asaas).
      * Usado quando admin CEO cadastra escola com plano escolhido.
      */

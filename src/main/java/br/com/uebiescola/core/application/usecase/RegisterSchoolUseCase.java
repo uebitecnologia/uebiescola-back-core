@@ -7,6 +7,7 @@ import br.com.uebiescola.core.domain.model.enums.UserRole;
 import br.com.uebiescola.core.application.service.ReferralService;
 import br.com.uebiescola.core.domain.repository.SchoolRepository;
 import br.com.uebiescola.core.domain.repository.UserRepository;
+import br.com.uebiescola.core.infrastructure.client.PlansSubscriptionClient;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository;
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import br.com.uebiescola.core.presentation.dto.SchoolRegistrationRequest;
@@ -33,6 +34,7 @@ public class RegisterSchoolUseCase {
     private final JpaSchoolRepository jpaSchoolRepository;
     private final PasswordEncoder passwordEncoder;
     private final ReferralService referralService;
+    private final PlansSubscriptionClient plansSubscriptionClient;
 
     @Transactional
     public SchoolRegistrationResponse execute(SchoolRegistrationRequest request) {
@@ -130,6 +132,17 @@ public class RegisterSchoolUseCase {
                 log.warn("[REFERRAL] Falha ao registrar indicacao codigo={} schoolId={}: {}",
                         request.referralCode(), savedSchool.getId(), e.getMessage());
             }
+        }
+
+        // Subscription TRIAL com plano escolhido (best-effort)
+        try {
+            plansSubscriptionClient.createTrialSubscriptionWithPlan(
+                    new PlansSubscriptionClient.TrialWithPlanRequest(savedSchool.getId(), request.planUuid(), 14));
+            log.info("[TRIAL] Subscription criada | schoolId={} planUuid={}",
+                    savedSchool.getId(), request.planUuid());
+        } catch (Exception e) {
+            log.warn("[TRIAL] Falha ao criar subscription trial schoolId={} planUuid={}: {}",
+                    savedSchool.getId(), request.planUuid(), e.getMessage());
         }
 
         log.info("Nova escola registrada: {} ({})", savedSchool.getName(), savedSchool.getSubdomain());
