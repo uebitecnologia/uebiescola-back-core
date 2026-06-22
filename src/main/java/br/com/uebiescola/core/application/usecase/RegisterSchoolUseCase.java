@@ -134,12 +134,30 @@ public class RegisterSchoolUseCase {
             }
         }
 
-        // Subscription TRIAL com plano escolhido (best-effort)
+        // Subscription TRIAL com plano + cartao escolhido (best-effort)
+        // Se cartao informado: cria customer/subscription Asaas com cobranca em +14d.
+        // Se nao: cria apenas trial local (legado / cadastros sem cartao).
         try {
+            PlansSubscriptionClient.CreditCardInput cardForward = null;
+            PlansSubscriptionClient.CreditCardHolderInput holderForward = null;
+            if (request.creditCard() != null) {
+                var c = request.creditCard();
+                cardForward = new PlansSubscriptionClient.CreditCardInput(
+                        c.holderName(), c.number(), c.expiryMonth(), c.expiryYear(), c.ccv());
+            }
+            if (request.creditCardHolderInfo() != null) {
+                var h = request.creditCardHolderInfo();
+                holderForward = new PlansSubscriptionClient.CreditCardHolderInput(
+                        h.name(), h.email(), h.cpfCnpj(), h.postalCode(), h.addressNumber(), h.phone());
+            }
             plansSubscriptionClient.createTrialSubscriptionWithPlan(
-                    new PlansSubscriptionClient.TrialWithPlanRequest(savedSchool.getId(), request.planUuid(), 14));
-            log.info("[TRIAL] Subscription criada | schoolId={} planUuid={}",
-                    savedSchool.getId(), request.planUuid());
+                    new PlansSubscriptionClient.TrialWithPlanRequest(
+                            savedSchool.getId(), request.planUuid(), 14,
+                            savedSchool.getName(), request.legalName(), request.cnpj(),
+                            request.adminEmail(), request.phone(),
+                            cardForward, holderForward));
+            log.info("[TRIAL] Subscription criada | schoolId={} planUuid={} cartao={}",
+                    savedSchool.getId(), request.planUuid(), cardForward != null);
         } catch (Exception e) {
             log.warn("[TRIAL] Falha ao criar subscription trial schoolId={} planUuid={}: {}",
                     savedSchool.getId(), request.planUuid(), e.getMessage());

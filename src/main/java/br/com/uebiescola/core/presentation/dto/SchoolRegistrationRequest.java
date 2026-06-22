@@ -32,10 +32,22 @@ public record SchoolRegistrationRequest(
         String subdomain,
         String referralCode,
         // UUID do plano escolhido no site /precos (opcional — se null, trial pega plano mais barato)
-        java.util.UUID planUuid
+        java.util.UUID planUuid,
+        // Cartao pre-autorizado (opcional — recomendado pra proteger trial contra abuso)
+        CreditCardInput creditCard,
+        CreditCardHolderInput creditCardHolderInfo
 ) {
     /** true se preencheu o caminho PJ (cnpj). */
     public boolean isPj() { return cnpj != null && !cnpj.isBlank(); }
     /** true se preencheu o caminho PF (cpf). */
     public boolean isPf() { return cpf != null && !cpf.isBlank(); }
+
+    public record CreditCardInput(
+            String holderName, String number, String expiryMonth, String expiryYear, String ccv
+    ) {}
+
+    public record CreditCardHolderInput(
+            String name, String email, String cpfCnpj, String postalCode,
+            String addressNumber, String phone
+    ) {}
 }

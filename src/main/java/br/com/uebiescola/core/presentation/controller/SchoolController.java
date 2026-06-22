@@ -128,11 +128,13 @@ public class SchoolController {
         if ("CREDIT_CARD".equals(type) && "YEARLY".equals(cycle)) {
             installments = request.installmentCount() != null ? request.installmentCount() : 12;
         }
+        Integer dueDay = request.contract() != null ? request.contract().expirationDay() : null;
         return new PlansSubscriptionClient.PaidSubscriptionRequest(
                 school.getId(), planId,
                 type != null ? type : "UNDEFINED",
                 cycle != null ? cycle : "MONTHLY",
                 installments,
+                dueDay,
                 school.getName(),
                 school.getLegalName(),
                 school.getCnpj(),

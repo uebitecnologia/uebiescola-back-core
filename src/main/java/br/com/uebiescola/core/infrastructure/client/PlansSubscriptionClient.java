@@ -31,7 +31,20 @@ public interface PlansSubscriptionClient {
     @PostMapping("/internal/subscriptions/trial")
     Object createTrialSubscriptionWithPlan(@RequestBody TrialWithPlanRequest request);
 
-    record TrialWithPlanRequest(Long schoolId, java.util.UUID planUuid, Integer trialDays) {}
+    record TrialWithPlanRequest(
+            Long schoolId, java.util.UUID planUuid, Integer trialDays,
+            String schoolName, String legalName, String cnpj, String email, String phone,
+            CreditCardInput creditCard, CreditCardHolderInput creditCardHolderInfo
+    ) {}
+
+    record CreditCardInput(
+            String holderName, String number, String expiryMonth, String expiryYear, String ccv
+    ) {}
+
+    record CreditCardHolderInput(
+            String name, String email, String cpfCnpj, String postalCode,
+            String addressNumber, String phone
+    ) {}
 
     /**
      * Cria subscription PAGA (cria customer + subscription no Asaas).
@@ -46,6 +59,7 @@ public interface PlansSubscriptionClient {
             String billingType,
             String billingCycle,
             Integer installmentCount,
+            Integer dueDay,
             String schoolName,
             String legalName,
             String cnpj,
