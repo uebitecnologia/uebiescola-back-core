@@ -3,11 +3,16 @@ package br.com.uebiescola.core.infrastructure.persistence.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -79,6 +84,19 @@ public class SchoolEntity {
     @Column(name = "referral_code", unique = true, length = 8)
     private String referralCode;
 
+    @Column(name = "marketplace_enabled", nullable = false)
+    private Boolean marketplaceEnabled;
+
+    @Column(name = "marketplace_commission_percent", nullable = false, precision = 5, scale = 2)
+    private BigDecimal marketplaceCommissionPercent;
+
+    @Column(name = "marketplace_commission_cap", precision = 10, scale = 2)
+    private BigDecimal marketplaceCommissionCap;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "marketplace_settings", nullable = false, columnDefinition = "jsonb")
+    private Map<String, Object> marketplaceSettings;
+
     private Boolean active;
 
     @CreationTimestamp
@@ -130,5 +148,8 @@ public class SchoolEntity {
     protected void onCreate() {
         if (this.uuid == null) this.uuid = UUID.randomUUID();
         if (this.externalId == null) this.externalId = UUID.randomUUID();
+        if (this.marketplaceEnabled == null) this.marketplaceEnabled = false;
+        if (this.marketplaceCommissionPercent == null) this.marketplaceCommissionPercent = new BigDecimal("10.00");
+        if (this.marketplaceSettings == null) this.marketplaceSettings = new HashMap<>();
     }
 }

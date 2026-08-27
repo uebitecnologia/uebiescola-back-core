@@ -1,8 +1,10 @@
 package br.com.uebiescola.core.domain.model;
 
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -28,6 +30,10 @@ public class School {
     private Double interestRate;
     private byte[] logoBytes;
     private String logoContentType;
+    private Boolean marketplaceEnabled;
+    private BigDecimal marketplaceCommissionPercent;
+    private BigDecimal marketplaceCommissionCap;
+    private Map<String, Object> marketplaceSettings;
     private Boolean active;
     private LocalDateTime createdAt;
 

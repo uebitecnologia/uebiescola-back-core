@@ -328,6 +328,69 @@ public class SchoolController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Endpoint CEO: liga/desliga marketplace + ajusta comissao da escola.
+     * Body: { enabled: boolean, commissionPercent?: number, commissionCap?: number }
+     */
+    @PutMapping("/{uuid}/marketplace-config")
+    @PreAuthorize("hasRole('CEO')")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> updateMarketplaceConfig(
+            @PathVariable("uuid") String idOrUuid,
+            @RequestBody Map<String, Object> body) {
+        Optional<School> existingOpt = resolveSchool(idOrUuid);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Long id = existingOpt.get().getId();
+        return schoolRepository.findById(id)
+                .map(school -> {
+                    if (body.containsKey("enabled")) {
+                        school.setMarketplaceEnabled(Boolean.TRUE.equals(body.get("enabled")));
+                    }
+                    if (body.containsKey("commissionPercent") && body.get("commissionPercent") != null) {
+                        school.setMarketplaceCommissionPercent(
+                                new java.math.BigDecimal(body.get("commissionPercent").toString()));
+                    }
+                    if (body.containsKey("commissionCap")) {
+                        Object v = body.get("commissionCap");
+                        school.setMarketplaceCommissionCap(v == null ? null : new java.math.BigDecimal(v.toString()));
+                    }
+                    schoolRepository.save(school);
+                    Map<String, Object> resp = new java.util.HashMap<>();
+                    resp.put("enabled", school.getMarketplaceEnabled());
+                    resp.put("commissionPercent", school.getMarketplaceCommissionPercent());
+                    resp.put("commissionCap", school.getMarketplaceCommissionCap());
+                    return ResponseEntity.ok(resp);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Endpoint admin escola: atualiza marketplace_settings (JSONB configuravel).
+     * Nao permite mudar enabled/commission (essas sao do CEO).
+     */
+    @PutMapping("/{uuid}/marketplace-settings")
+    @PreAuthorize("hasAnyRole('CEO', 'ADMIN')")
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<Map<String, Object>> updateMarketplaceSettings(
+            @PathVariable("uuid") String idOrUuid,
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        Optional<School> existingOpt = resolveSchool(idOrUuid);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Long id = existingOpt.get().getId();
+        if (!user.getRole().contains("CEO") && !id.equals(user.getSchoolId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return schoolRepository.findById(id)
+                .map(school -> {
+                    school.setMarketplaceSettings(body);
+                    schoolRepository.save(school);
+                    return ResponseEntity.ok(body);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/{uuid}/status")
     @PreAuthorize("hasRole('CEO')")
     @Transactional
