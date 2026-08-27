@@ -43,6 +43,7 @@ public class SchoolController {
     private final DeleteSchoolUseCase deleteSchoolUseCase;
     private final FindSchoolsUseCase findSchoolsUseCase;
     private final SchoolRepository schoolRepository;
+    private final br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository jpaSchoolRepository;
     private final UserRepository userRepository;
     private final PlansSubscriptionClient plansSubscriptionClient;
     private final PlansAsaasLogoClient plansAsaasLogoClient;
@@ -331,6 +332,10 @@ public class SchoolController {
     /**
      * Endpoint CEO: liga/desliga marketplace + ajusta comissao da escola.
      * Body: { enabled: boolean, commissionPercent?: number, commissionCap?: number }
+     *
+     * UPDATE nativo cirurgico (evita rebuild da entity inteira via mapper —
+     * o PUT /schools/{uuid} do form principal poderia sobrescrever esses
+     * campos se rodasse em seguida via findById+save do domain).
      */
     @PutMapping("/{uuid}/marketplace-config")
     @PreAuthorize("hasRole('CEO')")
@@ -341,24 +346,29 @@ public class SchoolController {
         Optional<School> existingOpt = resolveSchool(idOrUuid);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
         Long id = existingOpt.get().getId();
-        return schoolRepository.findById(id)
-                .map(school -> {
-                    if (body.containsKey("enabled")) {
-                        school.setMarketplaceEnabled(Boolean.TRUE.equals(body.get("enabled")));
-                    }
-                    if (body.containsKey("commissionPercent") && body.get("commissionPercent") != null) {
-                        school.setMarketplaceCommissionPercent(
-                                new java.math.BigDecimal(body.get("commissionPercent").toString()));
-                    }
-                    if (body.containsKey("commissionCap")) {
-                        Object v = body.get("commissionCap");
-                        school.setMarketplaceCommissionCap(v == null ? null : new java.math.BigDecimal(v.toString()));
-                    }
-                    schoolRepository.save(school);
+
+        Boolean enabled = body.containsKey("enabled") ? Boolean.TRUE.equals(body.get("enabled")) : null;
+        java.math.BigDecimal pct = null;
+        if (body.get("commissionPercent") != null) {
+            pct = new java.math.BigDecimal(body.get("commissionPercent").toString());
+        }
+        boolean capChanged = body.containsKey("commissionCap");
+        java.math.BigDecimal cap = null;
+        if (capChanged && body.get("commissionCap") != null) {
+            cap = new java.math.BigDecimal(body.get("commissionCap").toString());
+        }
+
+        int updated = jpaSchoolRepository.updateMarketplaceConfig(id, enabled, pct, capChanged, cap);
+        log.info("[MARKETPLACE-CONFIG] escola={} enabled={} pct={} capChanged={} cap={} rows={}",
+                id, enabled, pct, capChanged, cap, updated);
+
+        // Re-le do banco pra devolver estado atualizado
+        return jpaSchoolRepository.findById(id)
+                .map(e -> {
                     Map<String, Object> resp = new java.util.HashMap<>();
-                    resp.put("enabled", school.getMarketplaceEnabled());
-                    resp.put("commissionPercent", school.getMarketplaceCommissionPercent());
-                    resp.put("commissionCap", school.getMarketplaceCommissionCap());
+                    resp.put("enabled", e.getMarketplaceEnabled());
+                    resp.put("commissionPercent", e.getMarketplaceCommissionPercent());
+                    resp.put("commissionCap", e.getMarketplaceCommissionCap());
                     return ResponseEntity.ok(resp);
                 })
                 .orElse(ResponseEntity.notFound().build());
