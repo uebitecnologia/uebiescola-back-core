@@ -43,8 +43,14 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"message\": \"Token expirado ou invalido\"}");
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"message\": \"Token expirado ou inválido\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            // T-2/T-3 (auditoria 29/08): sem handler, @PreAuthorize rejeitando virava 500.
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"message\": \"Você não tem permissão para acessar este recurso (Role insuficiente)\"}");
                         })
                 )
                 .authorizeHttpRequests(authorize -> authorize
