@@ -78,6 +78,7 @@ public class TermsController {
     // ===================== AUTHENTICATED ENDPOINTS =====================
 
     @PostMapping("/terms/accept")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> acceptTerms(
             @AuthenticationPrincipal AuthenticatedUser auth,
             @RequestBody AcceptTermsRequest request,
@@ -109,6 +110,7 @@ public class TermsController {
     }
 
     @GetMapping("/terms/status")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<TermsVersion>> getTermsStatus(
             @AuthenticationPrincipal AuthenticatedUser auth) {
 

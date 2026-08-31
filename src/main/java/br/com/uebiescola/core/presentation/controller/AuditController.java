@@ -69,6 +69,7 @@ public class AuditController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> createAuditLog(
             @RequestBody Map<String, Object> request,
             @org.springframework.security.core.annotation.AuthenticationPrincipal

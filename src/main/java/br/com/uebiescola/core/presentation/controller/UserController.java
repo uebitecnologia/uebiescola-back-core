@@ -288,6 +288,7 @@ public class UserController {
     // ===================== MEU PERFIL (usuário autenticado) =====================
 
     @GetMapping("/me/profile")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserProfileDTO> getMyProfile(@AuthenticationPrincipal AuthenticatedUser user) {
         UserEntity me = userRepository.findByEmail(user.getEmail()).orElse(null);
         if (me == null) return ResponseEntity.notFound().build();
@@ -295,6 +296,7 @@ public class UserController {
     }
 
     @PatchMapping("/me/profile")
+    @PreAuthorize("isAuthenticated()")
     @Transactional
     public ResponseEntity<UserProfileDTO> updateMyProfile(
             @RequestBody UserProfileUpdateRequest req,

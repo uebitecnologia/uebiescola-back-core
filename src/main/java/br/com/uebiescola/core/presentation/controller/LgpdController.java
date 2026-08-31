@@ -22,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/lgpd")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class LgpdController {
 
     private final JpaUserRepository userRepository;
