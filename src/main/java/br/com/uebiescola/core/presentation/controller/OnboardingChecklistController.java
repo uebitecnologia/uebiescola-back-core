@@ -90,7 +90,7 @@ public class OnboardingChecklistController {
         steps.add(step("school", "Completar dados da escola", schoolComplete, "/school"));
         steps.add(step("payment", "Configurar pagamento", paymentConfigured, "/settings"));
         steps.add(step("class", "Criar a primeira turma", hasClass, "/classes/new"));
-        steps.add(step("guardian", "Cadastrar primeiro responsavel", hasGuardian, "/guardians/new"));
+        steps.add(step("guardian", "Cadastrar primeiro responsável", hasGuardian, "/guardians/new"));
         steps.add(step("student", "Cadastrar primeiro aluno", hasStudent, "/students/new"));
         steps.add(step("teacher", "Convidar primeiro professor", hasTeacher, "/teachers/new"));
         steps.add(step("announcement", "Enviar primeiro comunicado", hasAnnouncement, "/communication/announcements"));
