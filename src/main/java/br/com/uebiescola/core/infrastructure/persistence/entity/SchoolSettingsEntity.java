@@ -96,6 +96,15 @@ public class SchoolSettingsEntity {
     @Column(name = "dunning_days_third")
     private Integer dunningDaysThird = 15;
 
+    /**
+     * R-2 rodada 10 (31/08 pente-fino): valor minimo pra a regua disparar.
+     * Faturas abaixo desse valor nao geram cobranca automatica — evita
+     * torrar credito de WhatsApp/email num boleto de R$5.
+     */
+    @Builder.Default
+    @Column(name = "dunning_min_value")
+    private java.math.BigDecimal dunningMinValue = new java.math.BigDecimal("10.00");
+
     @Column(name = "discount_percent")
     private BigDecimal discountPercent;
 

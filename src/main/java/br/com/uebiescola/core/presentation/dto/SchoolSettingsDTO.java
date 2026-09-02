@@ -25,6 +25,7 @@ public record SchoolSettingsDTO(
         Integer dunningDaysFirst,
         Integer dunningDaysSecond,
         Integer dunningDaysThird,
+        BigDecimal dunningMinValue,
         BigDecimal discountPercent,
         Integer discountLimitDays,
         Boolean acceptPix,

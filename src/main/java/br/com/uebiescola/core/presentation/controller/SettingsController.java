@@ -100,6 +100,7 @@ public class SettingsController {
         if (dto.dunningDaysFirst() != null) settings.setDunningDaysFirst(dto.dunningDaysFirst());
         if (dto.dunningDaysSecond() != null) settings.setDunningDaysSecond(dto.dunningDaysSecond());
         if (dto.dunningDaysThird() != null) settings.setDunningDaysThird(dto.dunningDaysThird());
+        if (dto.dunningMinValue() != null) settings.setDunningMinValue(dto.dunningMinValue());
         if (dto.discountPercent() != null) settings.setDiscountPercent(dto.discountPercent());
         if (dto.discountLimitDays() != null) settings.setDiscountLimitDays(dto.discountLimitDays());
         if (dto.acceptPix() != null) settings.setAcceptPix(dto.acceptPix());
@@ -241,6 +242,7 @@ public class SettingsController {
                 e.getDunningDaysFirst(),
                 e.getDunningDaysSecond(),
                 e.getDunningDaysThird(),
+                e.getDunningMinValue(),
                 e.getDiscountPercent(),
                 e.getDiscountLimitDays(),
                 e.getAcceptPix(),
