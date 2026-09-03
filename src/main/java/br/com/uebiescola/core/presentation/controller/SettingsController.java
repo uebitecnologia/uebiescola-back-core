@@ -128,6 +128,11 @@ public class SettingsController {
         if (dto.gateAllowedEndTime() != null) settings.setGateAllowedEndTime(dto.gateAllowedEndTime());
         if (dto.gateAutoApproval() != null) settings.setGateAutoApproval(dto.gateAutoApproval());
 
+        // LGPD (L-4 rodada 17): DPO / encarregado da escola.
+        // String vazia zera o campo, null mantem valor anterior.
+        if (dto.dpoName() != null) settings.setDpoName(dto.dpoName().isBlank() ? null : dto.dpoName().trim());
+        if (dto.dpoEmail() != null) settings.setDpoEmail(dto.dpoEmail().isBlank() ? null : dto.dpoEmail().trim());
+
         settingsRepository.save(settings);
 
         // Registra no log de auditoria
@@ -262,7 +267,9 @@ public class SettingsController {
                 e.getQrExpirationMinutes(),
                 e.getGateAllowedStartTime(),
                 e.getGateAllowedEndTime(),
-                e.getGateAutoApproval()
+                e.getGateAutoApproval(),
+                e.getDpoName(),
+                e.getDpoEmail()
         );
     }
 }

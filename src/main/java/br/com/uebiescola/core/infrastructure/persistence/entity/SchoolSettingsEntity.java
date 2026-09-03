@@ -105,6 +105,17 @@ public class SchoolSettingsEntity {
     @Column(name = "dunning_min_value")
     private java.math.BigDecimal dunningMinValue = new java.math.BigDecimal("10.00");
 
+    /**
+     * L-4 rodada 17 (BACKLOGFINAL Chrome): encarregado de dados da escola
+     * (LGPD art. 41). Exibido no portal do responsavel como contato pra
+     * exercicio de direitos.
+     */
+    @Column(name = "dpo_name", length = 200)
+    private String dpoName;
+
+    @Column(name = "dpo_email", length = 200)
+    private String dpoEmail;
+
     @Column(name = "discount_percent")
     private BigDecimal discountPercent;
 

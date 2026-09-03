@@ -51,5 +51,9 @@ public record SchoolSettingsDTO(
         Integer qrExpirationMinutes,
         LocalTime gateAllowedStartTime,
         LocalTime gateAllowedEndTime,
-        Boolean gateAutoApproval
+        Boolean gateAutoApproval,
+
+        // LGPD (L-4 rodada 17)
+        String dpoName,
+        String dpoEmail
 ) {}
