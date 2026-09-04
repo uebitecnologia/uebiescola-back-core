@@ -62,6 +62,46 @@ public class AuditAspect {
         audit(joinPoint, "Atualizou");
     }
 
+    /**
+     * A-5 AUDITORIAADMINPLATAFORMA 03/09/2026: registra leitura marcada com
+     * @AuditableRead. Diferente das mutacoes acima, aqui NAO ignoramos CEO —
+     * o proposito e justamente rastrear equipe UebiEscola abrindo dado de
+     * escola-cliente. Aceita schoolId nulo (audit_log.school_id ficou
+     * nullable em V29).
+     */
+    @AfterReturning(pointcut = "@annotation(auditableRead)", returning = "result")
+    public void auditRead(JoinPoint joinPoint, AuditableRead auditableRead, Object result) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !(auth.getPrincipal() instanceof AuthenticatedUser user)) return;
+
+            // Extrai schoolId do path variable (se houver Long/UUID)
+            Long targetSchoolId = extractTargetSchoolId(joinPoint.getArgs());
+
+            String action = auditableRead.action() + " " + auditableRead.entity();
+            String details = auditableRead.entity()
+                    + (targetSchoolId != null ? " [schoolId=" + targetSchoolId + "]" : " [lista]");
+
+            AuditLogEntity logEntity = AuditLogEntity.builder()
+                    .schoolId(targetSchoolId != null ? targetSchoolId : user.getSchoolId())
+                    .userEmail(user.getEmail())
+                    .action(action)
+                    .details(details)
+                    .build();
+            auditLogRepository.save(logEntity);
+        } catch (Exception e) {
+            log.warn("Falha ao registrar auditoria de leitura: {}", e.getMessage());
+        }
+    }
+
+    private Long extractTargetSchoolId(Object[] args) {
+        for (Object arg : args) {
+            if (arg instanceof Long l) return l;
+            // UUID de escola nao ajuda a preencher schoolId — devolve null.
+        }
+        return null;
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void audit(JoinPoint joinPoint, String actionVerb) {
         try {

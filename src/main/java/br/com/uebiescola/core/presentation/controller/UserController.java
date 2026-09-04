@@ -202,6 +202,7 @@ public class UserController {
 
     @GetMapping("/ceo-team")
     @PreAuthorize("hasRole('CEO')")
+    @br.com.uebiescola.core.infrastructure.audit.AuditableRead(entity = "Equipe UebiEscola", action = "Consultou")
     public ResponseEntity<List<UserDTO>> listCeoTeam() {
         List<UserDTO> users = userRepository.findAllBySchoolIdIsNull().stream()
                 .map(this::toDTO)

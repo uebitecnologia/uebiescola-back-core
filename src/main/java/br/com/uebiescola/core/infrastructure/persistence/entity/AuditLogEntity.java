@@ -19,7 +19,9 @@ public class AuditLogEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "school_id", nullable = false)
+    // A-5 AUDITORIAADMINPLATAFORMA 03/09/2026: nullable pra leitura CEO
+    // cross-tenant (ex: listar escolas — nao ha um schoolId alvo unico).
+    @Column(name = "school_id")
     private Long schoolId;
 
     @Column(name = "user_email")

@@ -155,6 +155,7 @@ public class SchoolController {
 
     @GetMapping
     @PreAuthorize("hasRole('CEO')")
+    @br.com.uebiescola.core.infrastructure.audit.AuditableRead(entity = "Carteira de escolas", action = "Consultou lista")
     public ResponseEntity<List<SchoolListItemResponse>> listAll() {
         List<School> schools = findSchoolsUseCase.execute();
 
@@ -172,6 +173,7 @@ public class SchoolController {
     @GetMapping("/{uuid}")
     @PreAuthorize("hasAnyRole('CEO', 'ADMIN', 'GUARDIAN', 'TEACHER')")
     @Transactional
+    @br.com.uebiescola.core.infrastructure.audit.AuditableRead(entity = "Escola", action = "Consultou detalhe")
     public ResponseEntity<School> getById(@PathVariable("uuid") String idOrUuid, @AuthenticationPrincipal AuthenticatedUser user) {
         Optional<School> opt = resolveSchool(idOrUuid);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
