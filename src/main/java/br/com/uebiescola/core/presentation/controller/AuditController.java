@@ -32,9 +32,14 @@ public class AuditController {
     /**
      * CEO-only: List all audit logs across all schools with optional filters.
      */
+    /** D-3 AUDITORIAADMINPLATAFORMA 03/09/2026: teto no size pra evitar
+     *  dump completo em uma requisicao (Chrome fez ?size=2000 e recebeu
+     *  a base inteira de auditoria). */
+    private static final int MAX_PAGE_SIZE = 100;
+
     @GetMapping
     @PreAuthorize("hasRole('CEO')")
-    public ResponseEntity<List<AuditLogResponseDTO>> getAllAuditLogs(
+    public ResponseEntity<Map<String, Object>> getAllAuditLogs(
             @RequestParam(required = false) Long schoolId,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
@@ -42,8 +47,9 @@ public class AuditController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
 
+        int effectiveSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         Page<AuditLogEntity> logs = auditLogRepository.findAllWithFilters(
-                schoolId, action, from, to, PageRequest.of(page, size));
+                schoolId, action, from, to, PageRequest.of(page, effectiveSize));
 
         // Pre-load school names for the results
         List<Long> schoolIds = logs.getContent().stream()
@@ -54,7 +60,7 @@ public class AuditController {
         Map<Long, String> schoolNames = schoolRepository.findAllById(schoolIds).stream()
                 .collect(Collectors.toMap(SchoolEntity::getId, SchoolEntity::getName));
 
-        List<AuditLogResponseDTO> result = logs.getContent().stream()
+        List<AuditLogResponseDTO> content = logs.getContent().stream()
                 .map(log -> new AuditLogResponseDTO(
                         log.getSchoolId(),
                         schoolNames.getOrDefault(log.getSchoolId(), "Desconhecida"),
@@ -65,7 +71,16 @@ public class AuditController {
                 ))
                 .toList();
 
-        return ResponseEntity.ok(result);
+        // D-3 AUDITORIAADMINPLATAFORMA: envelope com totalElements, que a
+        // resposta anterior nao trazia — front nao conseguia dizer quantos ha.
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("content", content);
+        body.put("totalElements", logs.getTotalElements());
+        body.put("totalPages", logs.getTotalPages());
+        body.put("page", logs.getNumber());
+        body.put("size", logs.getSize());
+        body.put("maxSize", MAX_PAGE_SIZE);
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping
