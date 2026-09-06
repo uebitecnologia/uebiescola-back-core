@@ -24,6 +24,7 @@ import java.util.Map;
 public class AuditAspect {
 
     private final JpaAuditLogRepository auditLogRepository;
+    private final br.com.uebiescola.core.infrastructure.persistence.repository.JpaSchoolRepository schoolRepository;
 
     private static final Map<String, String> ENTITY_NAMES = Map.of(
             "SchoolController", "Escola",
@@ -119,7 +120,27 @@ public class AuditAspect {
     private Long extractTargetSchoolId(Object[] args) {
         for (Object arg : args) {
             if (arg instanceof Long l) return l;
-            // UUID de escola nao ajuda a preencher schoolId — devolve null.
+            // REVALIDACAO-2 06/09/2026 (A-5 resíduo): SchoolController.getById
+            // recebe UUID como String (path variable). Antes voltava null e a
+            // tela mostrava "(global)" pra leitura de detalhe de escola —
+            // errado, porque numa leitura de detalhe QUAL escola e a informacao.
+            // Agora resolve UUID -> schoolId via schoolRepository quando o path
+            // e um UUID valido de escola.
+            if (arg instanceof String s) {
+                try {
+                    java.util.UUID uuid = java.util.UUID.fromString(s);
+                    Long resolved = schoolRepository.findByUuid(uuid)
+                            .map(br.com.uebiescola.core.infrastructure.persistence.entity.SchoolEntity::getId)
+                            .orElse(null);
+                    if (resolved != null) return resolved;
+                } catch (IllegalArgumentException ignored) { /* nao e UUID */ }
+            }
+            if (arg instanceof java.util.UUID uuid) {
+                Long resolved = schoolRepository.findByUuid(uuid)
+                        .map(br.com.uebiescola.core.infrastructure.persistence.entity.SchoolEntity::getId)
+                        .orElse(null);
+                if (resolved != null) return resolved;
+            }
         }
         return null;
     }
