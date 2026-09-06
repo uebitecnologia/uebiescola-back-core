@@ -96,22 +96,24 @@ public class AuditController {
             @org.springframework.security.core.annotation.AuthenticationPrincipal
                 br.com.uebiescola.core.infrastructure.security.AuthenticatedUser user) {
 
-        // schoolId tem precedencia do body; se ausente, usa o do usuario autenticado
-        Long schoolId = request.get("schoolId") != null
-                ? ((Number) request.get("schoolId")).longValue()
-                : (user != null ? user.getSchoolId() : null);
-
-        // Constraint NOT NULL em audit_logs.school_id -- rejeita se ainda assim null
-        // (ex: chamada por usuario CEO sem escola selecionada)
-        if (schoolId == null) {
-            return ResponseEntity.badRequest().build();
+        // schoolId tem precedencia do body; se ausente, usa o do usuario autenticado.
+        // REVALIDACAO-2 06/09/2026: cast seguro pra evitar NPE em Number.longValue()
+        // quando body traz schoolId=null explicito (log CEO cross-tenant).
+        Long schoolId = null;
+        Object rawSchoolId = request.get("schoolId");
+        if (rawSchoolId instanceof Number n) {
+            schoolId = n.longValue();
+        } else if (user != null) {
+            schoolId = user.getSchoolId();
         }
+        // V29 tornou school_id nullable — CEO cross-tenant valido.
 
         AuditLogEntity log = AuditLogEntity.builder()
                 .schoolId(schoolId)
                 .userEmail((String) request.get("userEmail"))
                 .action((String) request.get("action"))
                 .details((String) request.get("details"))
+                .ipAddress((String) request.get("ipAddress"))
                 .build();
         auditLogRepository.save(log);
 
