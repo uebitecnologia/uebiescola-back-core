@@ -63,11 +63,17 @@ public class AuditController {
         List<AuditLogResponseDTO> content = logs.getContent().stream()
                 .map(log -> new AuditLogResponseDTO(
                         log.getSchoolId(),
-                        schoolNames.getOrDefault(log.getSchoolId(), "Desconhecida"),
+                        // REVALIDACAO 06/09/2026: schoolId null (leitura CEO
+                        // cross-tenant) e legitimo — mostra "(global)" em vez
+                        // de "Desconhecida", que era enganoso.
+                        log.getSchoolId() == null
+                                ? "(global)"
+                                : schoolNames.getOrDefault(log.getSchoolId(), "Desconhecida"),
                         log.getUserEmail(),
                         log.getAction(),
                         log.getDetails(),
-                        log.getCreatedAt()
+                        log.getCreatedAt(),
+                        log.getIpAddress()
                 ))
                 .toList();
 

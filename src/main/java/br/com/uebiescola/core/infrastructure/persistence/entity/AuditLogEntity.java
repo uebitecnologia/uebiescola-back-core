@@ -32,6 +32,10 @@ public class AuditLogEntity {
 
     private String details;
 
+    // REVALIDACAO 06/09/2026 (A-5): IP capturado no AuditAspect.
+    @Column(name = "ip_address", length = 45)
+    private String ipAddress;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

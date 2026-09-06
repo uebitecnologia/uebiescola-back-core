@@ -87,10 +87,32 @@ public class AuditAspect {
                     .userEmail(user.getEmail())
                     .action(action)
                     .details(details)
+                    .ipAddress(resolveClientIp())
                     .build();
             auditLogRepository.save(logEntity);
         } catch (Exception e) {
             log.warn("Falha ao registrar auditoria de leitura: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * REVALIDACAO-ADMIN-PLATAFORMA 06/09/2026 (A-5): captura IP do request atual
+     * pra preencher audit_logs.ip_address. Prefere X-Forwarded-For (o gateway
+     * nginx seta com o IP real do cliente). Retorna null se nao ha request
+     * (job scheduled, teste etc).
+     */
+    private String resolveClientIp() {
+        try {
+            var attrs = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (!(attrs instanceof org.springframework.web.context.request.ServletRequestAttributes servletAttrs)) return null;
+            jakarta.servlet.http.HttpServletRequest req = servletAttrs.getRequest();
+            String xff = req.getHeader("X-Forwarded-For");
+            if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+            String xreal = req.getHeader("X-Real-IP");
+            if (xreal != null && !xreal.isBlank()) return xreal.trim();
+            return req.getRemoteAddr();
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -123,6 +145,7 @@ public class AuditAspect {
                     .userEmail(user.getEmail())
                     .action(action)
                     .details(details)
+                    .ipAddress(resolveClientIp())
                     .build();
             auditLogRepository.save(logEntity);
 

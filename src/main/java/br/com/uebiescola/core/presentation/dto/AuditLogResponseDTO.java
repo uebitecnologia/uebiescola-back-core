@@ -8,5 +8,7 @@ public record AuditLogResponseDTO(
         String userEmail,
         String action,
         String details,
-        LocalDateTime timestamp
+        LocalDateTime timestamp,
+        // REVALIDACAO-ADMIN-PLATAFORMA 06/09/2026: tela promete IP.
+        String ipAddress
 ) {}
