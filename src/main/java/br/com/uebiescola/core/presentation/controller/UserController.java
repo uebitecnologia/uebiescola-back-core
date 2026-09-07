@@ -8,6 +8,7 @@ import br.com.uebiescola.core.infrastructure.persistence.repository.JpaAccessLev
 import br.com.uebiescola.core.infrastructure.persistence.repository.JpaUserRepository;
 import br.com.uebiescola.core.infrastructure.security.AuthenticatedUser;
 import br.com.uebiescola.core.infrastructure.security.TenantResolver;
+import br.com.uebiescola.core.presentation.dto.CeoTeamListItemDTO;
 import br.com.uebiescola.core.presentation.dto.UserDTO;
 import br.com.uebiescola.core.presentation.dto.UserProfileDTO;
 import br.com.uebiescola.core.presentation.dto.UserProfileUpdateRequest;
@@ -203,9 +204,9 @@ public class UserController {
     @GetMapping("/ceo-team")
     @PreAuthorize("hasRole('CEO')")
     @br.com.uebiescola.core.infrastructure.audit.AuditableRead(entity = "Equipe UebiEscola", action = "Consultou")
-    public ResponseEntity<List<UserDTO>> listCeoTeam() {
-        List<UserDTO> users = userRepository.findAllBySchoolIdIsNull().stream()
-                .map(this::toDTO)
+    public ResponseEntity<List<CeoTeamListItemDTO>> listCeoTeam() {
+        List<CeoTeamListItemDTO> users = userRepository.findAllBySchoolIdIsNull().stream()
+                .map(CeoTeamListItemDTO::from)
                 .toList();
         return ResponseEntity.ok(users);
     }

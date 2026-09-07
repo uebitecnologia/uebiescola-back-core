@@ -86,4 +86,9 @@ public class UserEntity {
     /** URL pública do avatar no bucket GCS. Pode ser null. */
     @Column(name = "photo_url", length = 500)
     private String photoUrl;
+
+    // A-7 AUDITORIAADMINPLATAFORMA: rastreio de ultimo login. Populado
+    // pelo iam-service no AuthenticateUserUseCase apos auth OK.
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 }

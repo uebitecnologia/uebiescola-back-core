@@ -326,7 +326,10 @@ class UserControllerTest {
                 .id(10L).externalId(UUID.randomUUID())
                 .name("CEO Member").email("member@uebi.com")
                 .password("encoded").role(UserRole.ROLE_CEO)
-                .schoolId(null).active(true).build();
+                .cpf("12345678901")
+                .schoolId(null).active(true)
+                .lastLoginAt(java.time.LocalDateTime.of(2026, 9, 6, 14, 30))
+                .build();
         when(userRepository.findAllBySchoolIdIsNull()).thenReturn(List.of(ceoMember));
 
         mockMvc.perform(get("/api/v1/users/ceo-team")
@@ -334,7 +337,12 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].name").value("CEO Member"))
-                .andExpect(jsonPath("$[0].role").value("ROLE_CEO"));
+                .andExpect(jsonPath("$[0].role").value("ROLE_CEO"))
+                // A-7 AUDITORIAADMINPLATAFORMA: listagem nao devolve cpf nem password
+                .andExpect(jsonPath("$[0].cpf").doesNotExist())
+                .andExpect(jsonPath("$[0].password").doesNotExist())
+                // A-7: lastLoginAt exposto pra saber quem da equipe realmente entra
+                .andExpect(jsonPath("$[0].lastLoginAt").exists());
     }
 
     @Test
